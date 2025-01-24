@@ -30,6 +30,5 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bschoolland/ai-tools.git"
-  },
-  "private": true
+  }
 }
