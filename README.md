@@ -2,68 +2,128 @@
 
 A personal collection of reusable AI utilities for quick project bootstrapping.
 
+## Requirements
+
+- Node.js >= 14.0.0 (for ES Modules support)
+- Your project must support ES Modules (package.json should have `"type": "module"`)
+
 ## Installation
 
-Add to your project's `package.json`:
+1. Add to your project's `package.json`:
 ```json
 {
+  "type": "module",  // Required: This package uses ES Modules
   "dependencies": {
     "@bschoolland/ai-tools": "git+https://github.com/bschoolland/ai-tools.git"
   }
 }
 ```
 
-Then run:
+2. Run:
 ```bash
 npm install
 ```
 
-Create a `.env` file in your project root and add your OpenAI API key:
+3. Create a `.env` file in your project root:
 ```
 OPENAI_API_KEY=your_api_key_here
 ```
 
-## Usage
+## Available Exports
 
-### Basic Chat Integration
-
-```javascript
-import { ChatBot } from '@bschoolland/ai-tools';
-
-const chatbot = new ChatBot({
-    apiKey: process.env.OPENAI_API_KEY,
-    model: 'gpt-4'  // optional, defaults to gpt-4
-});
-
-const response = await chatbot.chat('Hello, how can you help me today?');
-console.log(response);
-```
-
-### Using Tools
+The package exports the following:
 
 ```javascript
-import { Tools } from '@bschoolland/ai-tools/core';
+// Main imports
+import { ChatBot, Tools, History } from '@bschoolland/ai-tools';
 
-const tools = new Tools();
-tools.register('calculator', (input) => eval(input));
-
-const chatbot = new ChatBot({
-    apiKey: process.env.OPENAI_API_KEY,
-    tools: tools
-});
-```
-
-### Managing Chat History
-
-```javascript
+// Or import specific modules
+import { ChatBot } from '@bschoolland/ai-tools/core';
 import { History } from '@bschoolland/ai-tools/utils';
-
-const history = new History();
-history.add({
-    role: 'user',
-    content: 'What is 2+2?'
-});
 ```
+
+## Complete Example
+
+Here's a working example showing how to set up and use the package:
+
+```javascript
+// example.js
+import dotenv from 'dotenv';
+import { ChatBot, Tools } from '@bschoolland/ai-tools';
+
+// Load environment variables
+dotenv.config();
+
+// Create a simple tool
+const tools = new Tools();
+tools.register('getCurrentTime', () => new Date().toISOString());
+
+// Initialize chatbot
+const chatbot = new ChatBot({
+    apiKey: process.env.OPENAI_API_KEY,
+    model: 'gpt-4',
+    tools: tools,
+    systemMessage: 'You are a helpful assistant that can tell the time.'
+});
+
+// Example conversation
+async function main() {
+    try {
+        const response = await chatbot.sendMessage('What time is it?');
+        console.log('Bot:', response);
+        
+        // Access conversation history
+        console.log('Full conversation:', chatbot.getHistory().getHistory());
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+main();
+```
+
+To run this example:
+1. Save as `example.js`
+2. Ensure your `package.json` has `"type": "module"`
+3. Run with `node example.js`
+
+## Using in CommonJS Projects
+
+If your project uses CommonJS (default Node.js modules), you have two options:
+
+1. Convert your project to use ES Modules (recommended):
+   ```json
+   {
+     "type": "module"
+   }
+   ```
+
+2. Use dynamic imports in your CommonJS code:
+   ```javascript
+   // example.cjs
+   const main = async () => {
+     const { ChatBot } = await import('@bschoolland/ai-tools');
+     // ... rest of your code
+   };
+   main();
+   ```
+
+## Troubleshooting
+
+Common issues and solutions:
+
+1. **"Cannot use import statement outside a module"**
+   - Add `"type": "module"` to your package.json
+   - Or rename your file to `.mjs`
+   - Or use dynamic imports (see CommonJS section above)
+
+2. **"ERR_PACKAGE_PATH_NOT_EXPORTED"**
+   - Check your import path matches the exports in package.json
+   - Use the exact paths shown in "Available Exports" section
+
+3. **OpenAI API errors**
+   - Ensure OPENAI_API_KEY is set in your .env file
+   - Check that dotenv is properly configured
 
 ## Directory Structure
 
