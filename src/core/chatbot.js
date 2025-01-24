@@ -1,5 +1,5 @@
 // A chatbot class that retains conversation history and can call tools
-import { History } from "./history.js";
+import { History } from "../utils/history.js";
 import { Tools } from "./tools.js";
 
 async function openAiCall(history, tools = [], model = "gpt-4o-mini", apiKey = null) {
@@ -8,8 +8,7 @@ async function openAiCall(history, tools = [], model = "gpt-4o-mini", apiKey = n
     }
     const body = {
         model: model,
-        messages: history,
-        temperature: 0.7
+        messages: history
     };
     
     // Only add tools if they are provided and non-empty
@@ -63,7 +62,9 @@ async function getLLMResponse(options) {
         apiKey = process.env.OPENAI_API_KEY;
     }
     const history = new History();
-    history.setSystemMessage(systemMessage);
+    if (systemMessage) {
+        history.setSystemMessage(systemMessage);
+    }
     history.addMessage({ role: "user", content: message });
     const response = await openAiCall(history.getHistory(), [], model, apiKey);
     return response.message;
@@ -82,7 +83,7 @@ async function getLLMResponse(options) {
  * @returns {Promise<string>} - The response message from the agent.
  * @throws {Error} - Throws an error if the API call fails or the response format is invalid.
  */
-async function agentTask(options) {
+async function doAgentTask(options) {
     const { message, systemMessage = "", tools = [], model = "gpt-4o-mini", apiKey = process.env.OPENAI_API_KEY, maxToolCalls = 25, maxHistory = 100 } = options;
     if (!message) {
         throw new Error("Message is required");
@@ -240,7 +241,7 @@ class Chatbot {
      * @param {string} userMessage - The user message to send to the chatbot.
      * @returns {Promise<string>} - The response message from the chatbot.
      */
-    async userMessage(userMessage) {
+    async sendMessage(userMessage) {
         this.history.addMessage({ role: "user", content: userMessage });
         // if the model is an openai model, use the openai call function
         if (openAiModels.includes(this.model)) {
@@ -267,4 +268,4 @@ class Chatbot {
     }
 }
 
-export { Chatbot, getLLMResponse, agentTask };
+export { Chatbot, getLLMResponse, doAgentTask };

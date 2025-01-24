@@ -2,13 +2,25 @@
   "name": "broilerplate-ai",
   "version": "0.1.0",
   "description": "A collection of reusable AI utilities for quick project bootstrapping",
-  "main": "src/index.js",
   "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node calculator.js"
+  "main": "./src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "require": "./src/index.js"
+    },
+    "./core": "./src/core/index.js",
+    "./utils": "./src/utils/index.js"
   },
-  "keywords": ["ai", "openai", "utilities", "tools"],
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["ai", "openai", "utilities", "tools", "chatbot"],
   "author": "",
   "license": "MIT",
   "dependencies": {
