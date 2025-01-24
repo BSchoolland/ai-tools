@@ -1,0 +1,18 @@
+{
+  "name": "broilerplate-ai",
+  "version": "0.1.0",
+  "description": "A collection of reusable AI utilities for quick project bootstrapping",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node calculator.js"
+  },
+  "keywords": ["ai", "openai", "utilities", "tools"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "openai": "^4.24.1",
+    "dotenv": "^16.3.1"
+  }
+}
