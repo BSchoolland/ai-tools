@@ -13,47 +13,22 @@ function getDate(includeTime = false) {
 const testFunctions = [getDate];
 
 class Tools {
-    constructor(functions = [], toolsJson = [], addTestTools = false) {
-        
-        this.functions = functions;
-        this.toolsJson = toolsJson;
-        
+    constructor(functions = [], addTestTools = false) {
         if (addTestTools) {
-            this.functions = [...this.functions, ...testFunctions];
+            functions = [...functions, ...testFunctions];
         }
         
-    }
-
-    static create(tools = [], addTestTools = false) {
-        
-        const instance = new Tools();
+        this.functions = functions.map(t => typeof t === 'function' ? t : t.func);
         
         // Auto-generate toolsJson
-        const toolsJson = tools.map(tool => {
+        this.toolsJson = functions.map(tool => {
             if (typeof tool === 'function') {
-                return instance.generateToolJson(tool);
+                return this.generateToolJson(tool);
             } else {
                 const { func, description, parameters } = tool;
-                return instance.generateToolJsonWithMetadata(func, description, parameters);
+                return this.generateToolJsonWithMetadata(func, description, parameters);
             }
         });
-
-        if (addTestTools) {
-            const generatedTestTools = testFunctions.map(func => instance.generateToolJson(func));
-            const result = new Tools(
-                [...tools.map(t => typeof t === 'function' ? t : t.func), ...testFunctions],
-                [...toolsJson, ...generatedTestTools],
-                false
-            );
-            return result;
-        }
-
-        const result = new Tools(
-            tools.map(t => typeof t === 'function' ? t : t.func),
-            toolsJson,
-            false
-        );
-        return result;
     }
 
     registerFunction(tool) {

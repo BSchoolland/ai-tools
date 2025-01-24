@@ -6,13 +6,6 @@ import * as dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-// Verify API key is present
-if (!process.env.OPENAI_API_KEY) {
-    console.error("Error: OPENAI_API_KEY not found in environment variables");
-    console.error("Please set your OpenAI API key in the .env file or as an environment variable");
-    process.exit(1);
-}
-
 // Define calculator functions
 function add(a, b) {
     return a + b;
@@ -68,11 +61,11 @@ const calculatorTools = [
 ];
 
 // Create tools instance
-const tools = Tools.create(calculatorTools);
+const tools = new Tools(calculatorTools);
 
 // Create chatbot instance
 const chatbot = new Chatbot({
-    systemMessage: "You are a helpful math assistant that can perform basic arithmetic operations. For each calculation:\n1. Explain what operation you're going to perform\n2. Use the appropriate function to calculate the result\n3. Show the result and confirm it's correct\nAlways provide clear explanations in natural language.",
+    systemMessage: "You are a helpful math assistant that can perform basic arithmetic operations. For each calculation:\n2. Use the appropriate function to calculate the result\n3. Show the result and confirm it's correct\nAlways provide clear explanations in natural language.",
     tools: tools,
     apiKey: process.env.OPENAI_API_KEY,
 });
