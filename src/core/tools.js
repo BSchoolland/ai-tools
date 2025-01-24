@@ -1,4 +1,7 @@
 // class to handle tool calling
+// import .env
+import dotenv from 'dotenv';
+dotenv.config();
 
 /**
  * Returns the current date in YYYY-MM-DD format
@@ -31,7 +34,7 @@ class Tools {
         });
     }
 
-    registerFunction(tool) {
+    register(tool) {
         const func = typeof tool === 'function' ? tool : tool.func;
         
         this.functions.push(func);

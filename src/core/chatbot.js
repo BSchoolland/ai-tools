@@ -84,10 +84,14 @@ async function getLLMResponse(options) {
  * @throws {Error} - Throws an error if the API call fails or the response format is invalid.
  */
 async function doAgentTask(options) {
-    const { message, systemMessage = "", tools = [], model = "gpt-4o-mini", apiKey = process.env.OPENAI_API_KEY, maxToolCalls = 25, maxHistory = 100 } = options;
+    let { message, systemMessage = "", tools = [], model = "gpt-4o-mini", apiKey = null, maxToolCalls = 25, maxHistory = 100 } = options;
     if (!message) {
         throw new Error("Message is required");
     }
+    if (apiKey === null) {
+        apiKey = process.env.OPENAI_API_KEY;
+    }
+    console.log(apiKey);
     const history = new History();
     history.setSystemMessage(systemMessage);
     history.addMessage({ role: "user", content: message });
