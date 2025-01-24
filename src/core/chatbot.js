@@ -267,7 +267,8 @@ class ChatBot {
             model: this.model,
             apiKey: this.apiKey,
             maxToolCalls: this.maxToolCalls,
-            maxHistory: this.maxHistory
+            maxHistory: this.maxHistory,
+            systemMessage: this.systemMessage
         });
     }
 }
