@@ -1,5 +1,5 @@
 {
-  "name": "broilerplate-ai",
+  "name": "@bschoolland/ai-tools",
   "version": "0.1.0",
   "description": "A collection of reusable AI utilities for quick project bootstrapping",
   "type": "module",
@@ -21,10 +21,15 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["ai", "openai", "utilities", "tools", "chatbot"],
-  "author": "",
+  "author": "Benjamin Schoolland",
   "license": "MIT",
   "dependencies": {
     "openai": "^4.24.1",
     "dotenv": "^16.3.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bschoolland/ai-tools.git"
+  },
+  "private": true
 }

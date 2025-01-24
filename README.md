@@ -1,16 +1,24 @@
-# Broilerplate AI
+# @bschoolland/ai-tools
 
-A drag-and-drop AI functionality module that makes it extremely easy to add AI capabilities to any JavaScript project.
+A personal collection of reusable AI utilities for quick project bootstrapping.
 
 ## Installation
 
-1. Copy the `src` directory into your project
-2. Install the required dependencies:
-```bash
-npm install openai dotenv
+Add to your project's `package.json`:
+```json
+{
+  "dependencies": {
+    "@bschoolland/ai-tools": "git+https://github.com/bschoolland/ai-tools.git"
+  }
+}
 ```
 
-3. Create a `.env` file in your project root and add your OpenAI API key:
+Then run:
+```bash
+npm install
+```
+
+Create a `.env` file in your project root and add your OpenAI API key:
 ```
 OPENAI_API_KEY=your_api_key_here
 ```
@@ -20,8 +28,7 @@ OPENAI_API_KEY=your_api_key_here
 ### Basic Chat Integration
 
 ```javascript
-import { ChatBot } from 'path/to/src/core/chatbot.js';
-import { MessageRole } from 'path/to/src/types/index.js';
+import { ChatBot } from '@bschoolland/ai-tools';
 
 const chatbot = new ChatBot({
     apiKey: process.env.OPENAI_API_KEY,
@@ -35,7 +42,7 @@ console.log(response);
 ### Using Tools
 
 ```javascript
-import { Tools } from 'path/to/src/core/tools.js';
+import { Tools } from '@bschoolland/ai-tools/core';
 
 const tools = new Tools();
 tools.register('calculator', (input) => eval(input));
@@ -49,11 +56,11 @@ const chatbot = new ChatBot({
 ### Managing Chat History
 
 ```javascript
-import { History } from 'path/to/src/utils/history.js';
+import { History } from '@bschoolland/ai-tools/utils';
 
 const history = new History();
 history.add({
-    role: MessageRole.USER,
+    role: 'user',
     content: 'What is 2+2?'
 });
 ```
@@ -67,8 +74,6 @@ src/
 │   └── tools.js    # Tool system for extending AI capabilities
 ├── utils/          # Utility functions
 │   └── history.js  # Chat history management
-├── types/          # Type definitions
-│   └── index.js    # Common types and interfaces
 └── index.js        # Main entry point
 ```
 
@@ -78,7 +83,7 @@ src/
 - 🛠️ Extensible tools system
 - 📝 Chat history management
 - 📦 Modular and reusable
-- 🔌 Simple drag-and-drop integration
+- 🔌 Simple integration
 
 ## License
 
