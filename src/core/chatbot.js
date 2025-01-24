@@ -1,4 +1,4 @@
-// A chatbot class that retains conversation history and can call tools
+// A ChatBot class that retains conversation history and can call tools
 import { History } from "../utils/history.js";
 import { Tools } from "./tools.js";
 
@@ -162,18 +162,18 @@ async function openAiToolLoop(options) {
 }
 
 /**
- * A chatbot class that retains conversation history and can call tools
+ * A ChatBot class that retains conversation history and can call tools
  * 
- * @param {Object} options - The options for the chatbot.
- * @param {string} [options.systemMessage=""] - The system message to set the context for the chatbot.
- * @param {string} [options.model="gpt-4o-mini"] - The AI model to use for the chatbot.
- * @param {Tools} [options.tools=[]] - Any functions that the chatbot can use.
+ * @param {Object} options - The options for the ChatBot.
+ * @param {string} [options.systemMessage=""] - The system message to set the context for the ChatBot.
+ * @param {string} [options.model="gpt-4o-mini"] - The AI model to use for the ChatBot.
+ * @param {Tools} [options.tools=[]] - Any functions that the ChatBot can use.
  * @param {string} [options.apiKey] - The API key for authentication. If not provided, it will use the OPENAI_API_KEY environment variable.
  * @param {History} [options.history=new History()] - The conversation history if you want to start the conversation with existing messages.
- * @param {number} [options.maxToolCalls=5] - A limit on the number of tool calls the chatbot can make per message.
+ * @param {number} [options.maxToolCalls=5] - A limit on the number of tool calls the ChatBot can make per message.
  * @param {number} [options.maxHistory=100] - The number of messages that can be stored in the conversation history.
  */
-class Chatbot {
+class ChatBot {
     constructor(options = {}) {
         const defaults = {
             systemMessage: "",
@@ -196,9 +196,9 @@ class Chatbot {
     }
 
     /**
-     * Set the tools that the chatbot can use.
+     * Set the tools that the ChatBot can use.
      * 
-     * @param {Tools} tools - The tools that the chatbot can use.  Note that this will override any tools that were previously set.
+     * @param {Tools} tools - The tools that the ChatBot can use.  Note that this will override any tools that were previously set.
      */
     setTools(tools) {
         this.tools = tools;
@@ -238,8 +238,8 @@ class Chatbot {
     /**
      * Send a user message and get a response.
      * 
-     * @param {string} userMessage - The user message to send to the chatbot.
-     * @returns {Promise<string>} - The response message from the chatbot.
+     * @param {string} userMessage - The user message to send to the ChatBot.
+     * @returns {Promise<string>} - The response message from the ChatBot.
      */
     async sendMessage(userMessage) {
         this.history.addMessage({ role: "user", content: userMessage });
@@ -254,7 +254,7 @@ class Chatbot {
     /**
      * Internal function to call the openai tool loop.
      * 
-     * @returns {Promise<string>} - The response message from the chatbot.
+     * @returns {Promise<string>} - The response message from the ChatBot.
      */
     async openAiToolLoop() {
         return openAiToolLoop({
@@ -268,4 +268,4 @@ class Chatbot {
     }
 }
 
-export { Chatbot, getLLMResponse, doAgentTask };
+export { ChatBot, getLLMResponse, doAgentTask };

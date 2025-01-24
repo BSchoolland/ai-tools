@@ -35,10 +35,10 @@ The package exports the following:
 
 ```javascript
 // Main imports
-import { Chatbot, Tools, History } from '@bschoolland/ai-tools';
+import { ChatBot, Tools, History } from '@bschoolland/ai-tools';
 
 // Or import specific modules
-import { Chatbot } from '@bschoolland/ai-tools/core';
+import { ChatBot } from '@bschoolland/ai-tools/core';
 import { History } from '@bschoolland/ai-tools/utils';
 ```
 
@@ -49,7 +49,7 @@ Here's a working example showing how to set up and use the package:
 ```javascript
 // example.js
 import dotenv from 'dotenv';
-import { Chatbot, Tools } from '@bschoolland/ai-tools';
+import { ChatBot, Tools } from '@bschoolland/ai-tools';
 
 // Load environment variables
 dotenv.config();
@@ -67,8 +67,8 @@ const tools = new Tools([
     }
 ]);
 
-// Initialize chatbot
-const chatbot = new Chatbot({
+// Initialize ChatBot
+const chatbot = new ChatBot({
     apiKey: process.env.OPENAI_API_KEY,
     model: 'gpt-4o-mini',
     tools: tools,
@@ -111,7 +111,7 @@ If your project uses CommonJS (default Node.js modules), you have two options:
    ```javascript
    // example.cjs
    const main = async () => {
-     const { Chatbot } = await import('@bschoolland/ai-tools');
+     const { ChatBot } = await import('@bschoolland/ai-tools');
      // ... rest of your code
    };
    main();
@@ -139,7 +139,7 @@ Common issues and solutions:
 ```
 src/
 ├── core/           # Core AI functionality
-│   ├── chatbot.js  # Main chatbot implementation
+│   ├── ChatBot.js  # Main ChatBot implementation
 │   └── tools.js    # Tool system for extending AI capabilities
 ├── utils/          # Utility functions
 │   └── history.js  # Chat history management
@@ -148,7 +148,7 @@ src/
 
 ## Features
 
-- 🤖 Easy-to-use Chatbot integration
+- 🤖 Easy-to-use ChatBot integration
 - 🛠️ Extensible tools system
 - 📝 Chat history management
 - 📦 Modular and reusable

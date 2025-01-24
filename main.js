@@ -1,4 +1,4 @@
-import { Chatbot, getLLMResponse, doAgentTask, Tools, History } from "./src/index.js"
+import { ChatBot, getLLMResponse, doAgentTask, Tools, History } from "./src/index.js"
 
 if (import.meta.url === `file://${process.argv[1]}`) {
     // import .env
@@ -16,7 +16,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             systemMessage: "Always respond like a pirate.",
             apiKey: process.env.OPENAI_API_KEY
         });
-        console.log('Chatbot: ' + response);
+        console.log('ChatBot: ' + response);
         console.log('==============================================');
         console.log('Testing agent task...');
         console.log('User: What is the current date and time?');
@@ -26,10 +26,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             tools: new Tools([], true),
             apiKey: process.env.OPENAI_API_KEY
         });
-        console.log('Chatbot: ' + task);
+        console.log('ChatBot: ' + task);
         console.log('==============================================');
-        console.log('Testing chatbot with context retention...');
-        const chatbot = new Chatbot({
+        console.log('Testing ChatBot with context retention...');
+        const chatbot = new ChatBot({
             model: "gpt-4o-mini",
             apiKey: process.env.OPENAI_API_KEY,
             maxHistory: 10,
@@ -37,10 +37,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         });
         console.log('User: Remember the number 42.');
         const response2 = await chatbot.sendMessage("Remember the number 42.");
-        console.log('Chatbot: ' + response2);
+        console.log('ChatBot: ' + response2);
         console.log('User: What is the number?');
         const response3 = await chatbot.sendMessage("What is the number?");
-        console.log('Chatbot: ' + response3);
+        console.log('ChatBot: ' + response3);
         console.log('==============================================');
         console.log('Tests complete!');
     })();
