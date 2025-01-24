@@ -2,7 +2,7 @@
 import { History } from "./history.js";
 import { Tools } from "./tools.js";
 
-async function openAiCall(history, tools = [], model = "gpt-4", apiKey = null) {
+async function openAiCall(history, tools = [], model = "gpt-4o-mini", apiKey = null) {
     if (apiKey === null) {
         apiKey = process.env.OPENAI_API_KEY;
     }
@@ -36,7 +36,7 @@ async function openAiCall(history, tools = [], model = "gpt-4", apiKey = null) {
     return { message, tool_calls };
 }
 
-const openAiModels = ["gpt-4", "gpt-3.5-turbo", "gpt-4-turbo-preview"];
+const openAiModels = ["gpt-4o-mini"];
 const anthropicModels = ["claude-3-sonnet-20240229"]; // TODO: integrate anthropic models
 const otherModels = ["deepseek-r1", "llama", "gemini"]; // TODO: integrate other models
 
@@ -44,7 +44,7 @@ class Chatbot {
     constructor(options = {}) {
         const defaults = {
             systemMessage: "",
-            model: "gpt-4",
+            model: "gpt-4o-mini",
             tools: new Tools(),
             apiKey: null,
             history: new History(),
@@ -106,28 +106,35 @@ class Chatbot {
                 // if there are no tool calls, we are done
                 callingTools = false;
                 this.history.addMessage({ role: "assistant", content: message });
-                console.log('chatbot says:', message);
                 return message;
             } else {
                 // if there are tool calls, we need to call the tools, then loop again and allow the model to react to the results
                 this.history.addMessage({ role: "assistant", content: message, tool_calls: tool_calls });
                 callingTools = true;
                 tool_calls.forEach(tool_call => {
-                    let response = this.tools.call(tool_call.function.name, tool_call.function.arguments);
-                    this.history.addMessage({ 
-                        role: 'tool', 
-                        content: response,
-                        tool_call_id: tool_call.id,
-                        name: tool_call.function.name
-                    });
+                    try {
+                        const args = JSON.parse(tool_call.function.arguments);
+                        const response = this.tools.call(tool_call.function.name, args);
+                        this.history.addMessage({ 
+                            role: 'tool', 
+                            content: response.toString(),
+                            tool_call_id: tool_call.id,
+                            name: tool_call.function.name
+                        });
+                    } catch (error) {
+                        this.history.addMessage({ 
+                            role: 'tool', 
+                            content: `Error: ${error.message}`,
+                            tool_call_id: tool_call.id,
+                            name: tool_call.function.name
+                        });
+                    }
                 });
             }
         }
-        console.warn('Tool loop exceeded maximum attempts, forcing model response');
         // temporarily disable tool calls and have the model respond to the last tool call
         const { message, tool_calls } = await openAiCall(this.history.getHistory(100), [], this.model, this.apiKey); // No tools passed in
         this.history.addMessage({ role: "assistant", content: message });
-        console.log('chatbot says:', message);
         return message;
     }
 

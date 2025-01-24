@@ -78,22 +78,3 @@ tools.registerFunction({
     parameters: { ... }
 });
 ```
-
-### Valid Parameter Types
-
-When specifying parameter types, use one of:
-- `"string"`
-- `"number"`
-- `"boolean"`
-- `"object"`
-- `"array"`
-
-### Best Practices
-
-1. Start with simple mode for quick prototyping
-2. Add metadata when you need precise type information
-3. Pay attention to warning messages about type inference
-4. Always provide types for parameters without default values
-5. Use descriptive parameter names and function names
-
-## 

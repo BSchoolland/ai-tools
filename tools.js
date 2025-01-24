@@ -14,48 +14,51 @@ const testFunctions = [getDate];
 
 class Tools {
     constructor(functions = [], toolsJson = [], addTestTools = false) {
+        
         this.functions = functions;
         this.toolsJson = toolsJson;
         
         if (addTestTools) {
             this.functions = [...this.functions, ...testFunctions];
         }
+        
     }
 
     static create(tools = [], addTestTools = false) {
+        
         const instance = new Tools();
         
         // Auto-generate toolsJson
         const toolsJson = tools.map(tool => {
             if (typeof tool === 'function') {
-                // If just a function is passed, auto-generate everything
                 return instance.generateToolJson(tool);
             } else {
-                // If metadata is provided, use it
                 const { func, description, parameters } = tool;
                 return instance.generateToolJsonWithMetadata(func, description, parameters);
             }
         });
 
         if (addTestTools) {
-            // Auto-generate test tools JSON
             const generatedTestTools = testFunctions.map(func => instance.generateToolJson(func));
-            return new Tools(
+            const result = new Tools(
                 [...tools.map(t => typeof t === 'function' ? t : t.func), ...testFunctions],
                 [...toolsJson, ...generatedTestTools],
-                false // already handled test functions
+                false
             );
+            return result;
         }
 
-        return new Tools(
+        const result = new Tools(
             tools.map(t => typeof t === 'function' ? t : t.func),
             toolsJson,
             false
         );
+        return result;
     }
 
     registerFunction(tool) {
         const func = typeof tool === 'function' ? tool : tool.func;
+        
         this.functions.push(func);
         
         if (typeof tool === 'function') {
@@ -67,7 +70,8 @@ class Tools {
     }
 
     generateToolJsonWithMetadata(func, description, parameters) {
-        return {
+        
+        const result = {
             type: "function",
             function: {
                 name: func.name,
@@ -81,9 +85,12 @@ class Tools {
                 }
             }
         };
+        
+        return result;
     }
 
     generateToolJson(func) {
+        
         // Extract parameter names using regex
         const paramMatch = func.toString().match(/\((.*?)\)/);
         const params = paramMatch ? paramMatch[1].split(',').map(p => p.trim()) : [];
@@ -100,6 +107,7 @@ class Tools {
             if (param) {
                 // Handle default values
                 const [paramName, defaultValue] = param.split('=').map(p => p.trim());
+                
                 parameters.properties[paramName] = {
                     type: this._inferType(defaultValue, paramName),
                     description: this._autoDescribeParam(paramName)
@@ -113,7 +121,7 @@ class Tools {
         });
 
         // Create the tool JSON
-        return {
+        const result = {
             type: "function",
             function: {
                 name: func.name,
@@ -121,10 +129,11 @@ class Tools {
                 parameters
             }
         };
+        
+        return result;
     }
 
     _autoDescribeFunction(funcName) {
-        // Convert camelCase to spaces and capitalize
         return funcName
             .replace(/([A-Z])/g, ' $1')
             .replace(/^./, str => str.toUpperCase())
@@ -132,7 +141,6 @@ class Tools {
     }
 
     _autoDescribeParam(paramName) {
-        // Convert camelCase to spaces and capitalize
         return paramName
             .replace(/([A-Z])/g, ' $1')
             .replace(/^./, str => str.toUpperCase())
@@ -154,15 +162,20 @@ class Tools {
     }
 
     call(toolName, toolArgs) {
+        
         // call the tool
         const func = this.functions.find(f => f.name === toolName);
         if (func) {
             try {
                 // Extract parameters in the correct order from the args object
                 const paramNames = this._getParameterNames(func);
+                
                 const args = paramNames.map(name => toolArgs[name]);
-                return func(...args);
+                
+                const result = func(...args);
+                return result;
             } catch (error) {
+                console.error('Tool call failed:', error);
                 return 'Tool call failed: ' + error;
             }
         }
@@ -213,18 +226,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     (async () => {
         const tools = await Tools.create([simpleExample, metadataExample], true);
 
-        // console.log('\nAuto-generated Example:');
-        // console.log(JSON.stringify(tools.toolsJson[0], null, 2));
 
-        console.log('\nMetadata Example:');
-        console.log(JSON.stringify(tools.toolsJson[1], null, 2));
 
-        console.log('\nTest Tool (getDate):');
-        console.log(JSON.stringify(tools.toolsJson[2], null, 2));
 
         // testing calling the tools
-        console.log(tools.call('calculateTotal', { price: 100, taxRate: 0.05 }));
-        console.log(tools.call('getDate', { includeTime: false }));
-        console.log(tools.call('getDate', { includeTime: true }));
     })().catch(console.error);
 }

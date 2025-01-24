@@ -72,10 +72,9 @@ const tools = Tools.create(calculatorTools);
 
 // Create chatbot instance
 const chatbot = new Chatbot({
-    systemMessage: "You are a helpful math assistant. You can perform basic arithmetic operations using the provided tools. Always show your work and explain the steps you're taking.",
+    systemMessage: "You are a helpful math assistant that can perform basic arithmetic operations. For each calculation:\n1. Explain what operation you're going to perform\n2. Use the appropriate function to calculate the result\n3. Show the result and confirm it's correct\nAlways provide clear explanations in natural language.",
     tools: tools,
     apiKey: process.env.OPENAI_API_KEY,
-    model: "gpt-4" // Using a specific model name that exists
 });
 
 // Create readline interface
