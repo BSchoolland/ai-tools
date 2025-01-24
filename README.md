@@ -35,10 +35,10 @@ The package exports the following:
 
 ```javascript
 // Main imports
-import { ChatBot, Tools, History } from '@bschoolland/ai-tools';
+import { Chatbot, Tools, History } from '@bschoolland/ai-tools';
 
 // Or import specific modules
-import { ChatBot } from '@bschoolland/ai-tools/core';
+import { Chatbot } from '@bschoolland/ai-tools/core';
 import { History } from '@bschoolland/ai-tools/utils';
 ```
 
@@ -49,19 +49,28 @@ Here's a working example showing how to set up and use the package:
 ```javascript
 // example.js
 import dotenv from 'dotenv';
-import { ChatBot, Tools } from '@bschoolland/ai-tools';
+import { Chatbot, Tools } from '@bschoolland/ai-tools';
 
 // Load environment variables
 dotenv.config();
 
-// Create a simple tool
-const tools = new Tools();
-tools.register('getCurrentTime', () => new Date().toISOString());
+function getCurrentTime() {
+    return new Date().toISOString();
+}
+
+// Create a tool
+const tools = new Tools([
+    {
+        func: getCurrentTime,
+        description: 'Get the current time',
+        parameters: {}
+    }
+]);
 
 // Initialize chatbot
-const chatbot = new ChatBot({
+const chatbot = new Chatbot({
     apiKey: process.env.OPENAI_API_KEY,
-    model: 'gpt-4',
+    model: 'gpt-4o-mini',
     tools: tools,
     systemMessage: 'You are a helpful assistant that can tell the time.'
 });
@@ -102,7 +111,7 @@ If your project uses CommonJS (default Node.js modules), you have two options:
    ```javascript
    // example.cjs
    const main = async () => {
-     const { ChatBot } = await import('@bschoolland/ai-tools');
+     const { Chatbot } = await import('@bschoolland/ai-tools');
      // ... rest of your code
    };
    main();
@@ -139,7 +148,7 @@ src/
 
 ## Features
 
-- 🤖 Easy-to-use ChatBot integration
+- 🤖 Easy-to-use Chatbot integration
 - 🛠️ Extensible tools system
 - 📝 Chat history management
 - 📦 Modular and reusable
