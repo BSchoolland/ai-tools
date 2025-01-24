@@ -194,6 +194,7 @@ class ChatBot {
         this.maxHistory = settings.maxHistory;
         this.model = settings.model;
         this.systemMessage = settings.systemMessage;
+        this.history.setSystemMessage(this.systemMessage);
         this.apiKey = settings.apiKey;
         this.tools = settings.tools;
         this.maxToolCalls = settings.maxToolCalls;
