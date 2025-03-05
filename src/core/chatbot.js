@@ -1,49 +1,11 @@
 // A ChatBot class that retains conversation history and can call tools
 import { History } from "../utils/history.js";
 import { Tools } from "./tools.js";
-
-async function openAiCall(history, tools = [], model = "gpt-4o-mini", apiKey = null) {
-    if (apiKey === null) {
-        apiKey = process.env.OPENAI_API_KEY;
-    }
-    const body = {
-        model: model,
-        messages: history
-    };
-    
-    // Only add tools if they are provided and non-empty
-    if (tools && tools.length > 0) {
-        body.tools = tools;
-    }
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`OpenAI API Error: ${error.error.message}`);
-    }
-
-    const responseData = await response.json();
-    
-    if (!responseData.choices || !responseData.choices[0] || !responseData.choices[0].message) {
-        throw new Error('Invalid response format from OpenAI API');
-    }
-
-    const message = responseData.choices[0].message.content || '';
-    const tool_calls = responseData.choices[0].message.tool_calls || null;
-    return { message, tool_calls };
-}
-
-const openAiModels = ["gpt-4o-mini", "gpt-4o"];
-const anthropicModels = ["claude-3-sonnet-20240229"]; // TODO: integrate anthropic models
-const otherModels = ["deepseek-r1", "llama", "gemini"]; // TODO: integrate other models
+import { validateOptions } from "./validateOptions.js";
+import { openAiModels } from "./config.js";
+import { openAiCall } from "./apiCalls.js";
+import { openAiToolLoop } from "./toolLoop.js";
+import { doAgentTask } from "./agent.js";
 
 /**
  * Get a response from the language model.
@@ -78,125 +40,6 @@ async function getLLMResponse(options) {
     history.addMessage({ role: "user", content: message });
     const response = await openAiCall(history.getHistory(), [], model, apiKey);
     return response.message;
-}
-/**
- * Assigns a task to an AI agent.
- * 
- * @param {Object} options - The options for the agent task.
- * @param {string} options.message - The user message to the agent.
- * @param {string} [options.systemMessage=""] - The system message to set the context for the agent.
- * @param {Tools} [options.tools=[]] - The tools that the agent can use.
- * @param {string} [options.model="gpt-4o-mini"] - The model to use for the agent.
- * @param {string} [options.apiKey] - The API key for authentication. If not provided, it will use the OPENAI_API_KEY environment variable.
- * @param {number} [options.maxToolCalls=25] - A limit on the number of tool calls the agent can make.
- * @param {number} [options.maxHistory=100] - The number of messages that can be stored in the conversation history.
- * @returns {Promise<string>} - The response message from the agent.
- * @throws {Error} - Throws an error if the API call fails or the response format is invalid.
- */
-
-function validateOptions(options, allowedParams, requiredParams = []) {
-    for (let key of Object.keys(options)) {
-        if (!allowedParams.has(key)) {
-            throw new Error(`Unexpected parameter: '${key}'. Allowed parameters are: ${[...allowedParams].join(", ")}`);
-        }
-    }
-    for (let key of requiredParams) {
-        if (!options[key]) {
-            throw new Error(`Required parameter: '${key}' is missing.`);
-        }
-    }
-}
-
-
-async function doAgentTask(options) {
-    const defaults = {
-        message: "",
-        systemMessage: "",
-        model: "gpt-4o-mini",
-        tools: new Tools(),
-        apiKey: null,
-        maxToolCalls: 25,
-        maxHistory: 100
-    };
-    const required = ["message", "tools"];
-    const settings = { ...defaults, ...options };
-    validateOptions(settings, new Set(Object.keys(defaults)), required);
-
-    let { message, systemMessage, tools, model, apiKey, maxToolCalls, maxHistory } = settings;
-    if (apiKey === null) {
-        apiKey = process.env.OPENAI_API_KEY;
-    }
-    const history = new History();
-    history.setSystemMessage(systemMessage);
-    history.addMessage({ role: "user", content: message });
-    // if the model is an openai model, use the openai call function
-    if (openAiModels.includes(model)) {
-        return openAiToolLoop({
-            history: history,
-            tools: tools,
-            model: model,
-            apiKey: apiKey,
-            maxToolCalls: maxToolCalls,
-            maxHistory: maxHistory
-        });
-    } else {
-        throw new Error(`Model ${model} is not supported`);
-    }
-}
-
-/**
- * Function for getting a response from the agent.  If tools are needed, it will call them and then loop again.
- * 
- * @param {Object} options - The options for the openai tool loop.
- * @param {History} options.history - The conversation history.
- * @param {Tools} options.tools - The tools that the agent can use.
- * @param {string} options.model - The model to use for the agent.
- * @param {string} options.apiKey - The API key for authentication.
- * @param {number} options.maxToolCalls - A limit on the number of tool calls the agent can make.
- * @param {number} options.maxHistory - The number of messages that can be stored in the conversation history.
- * @returns {Promise<string>} - The response message from the agent.
- */
-async function openAiToolLoop(options) {
-    const { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
-    let callingTools = true;
-    let attempts = 0;
-    while (callingTools && attempts < maxToolCalls) {
-        attempts++;
-        const { message, tool_calls } = await openAiCall(history.getHistory(maxHistory), tools.getTools(), model, apiKey);
-        if (!tool_calls) {
-            // if there are no tool calls, we are done
-            callingTools = false;
-            history.addMessage({ role: "assistant", content: message });
-            return message;
-        } else {
-            // if there are tool calls, we need to call the tools, then loop again and allow the model to react to the results
-            history.addMessage({ role: "assistant", content: message, tool_calls: tool_calls });
-            callingTools = true;
-            tool_calls.forEach(tool_call => {
-                try {
-                    const args = JSON.parse(tool_call.function.arguments);
-                    const response = tools.call(tool_call.function.name, args);
-                    history.addMessage({ 
-                        role: 'tool', 
-                        content: response.toString(),
-                        tool_call_id: tool_call.id,
-                        name: tool_call.function.name
-                    });
-                } catch (error) {
-                    history.addMessage({ 
-                        role: 'tool', 
-                        content: `Error: ${error.message}`,
-                        tool_call_id: tool_call.id,
-                        name: tool_call.function.name
-                    });
-                }
-            });
-        }
-    }
-    // temporarily disable tool calls and have the model respond to the last tool call
-    const { message, tool_calls } = await openAiCall(history.getHistory(maxHistory), [], model, apiKey); // No tools passed in
-    history.addMessage({ role: "assistant", content: message });
-    return {message, history: history.getHistory(maxHistory)};
 }
 
 /**
@@ -285,7 +128,8 @@ class ChatBot {
         this.history.addMessage({ role: "user", content: userMessage });
         // if the model is an openai model, use the openai call function
         if (openAiModels.includes(this.model)) {
-            return this.openAiToolLoop();
+            const response = await this.openAiToolLoop();
+            return response.message;
         } else {
             throw new Error(`Model ${this.model} is not supported`);
         }
@@ -305,7 +149,7 @@ class ChatBot {
             maxToolCalls: this.maxToolCalls,
             maxHistory: this.maxHistory,
             systemMessage: this.systemMessage
-        });
+        })
     }
 }
 
