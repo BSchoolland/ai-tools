@@ -41,7 +41,7 @@ async function openAiCall(history, tools = [], model = "gpt-4o-mini", apiKey = n
     return { message, tool_calls };
 }
 
-const openAiModels = ["gpt-4o-mini"];
+const openAiModels = ["gpt-4o-mini", "gpt-4o"];
 const anthropicModels = ["claude-3-sonnet-20240229"]; // TODO: integrate anthropic models
 const otherModels = ["deepseek-r1", "llama", "gemini"]; // TODO: integrate other models
 
@@ -57,7 +57,17 @@ const otherModels = ["deepseek-r1", "llama", "gemini"]; // TODO: integrate other
  * @throws {Error} - Throws an error if the API call fails or the response format is invalid.
  */
 async function getLLMResponse(options) {
-    const { message, systemMessage, model, apiKey } = options;
+    const defaults = {
+        message: "",
+        systemMessage: "",
+        model: "gpt-4o-mini",
+        apiKey: null
+    };
+    const required = ["message"];
+    const settings = { ...defaults, ...options };
+    validateOptions(settings, new Set(Object.keys(defaults)), required);
+    
+    const { message, systemMessage, model, apiKey } = settings;
     if (apiKey === null) {
         apiKey = process.env.OPENAI_API_KEY;
     }
@@ -83,15 +93,39 @@ async function getLLMResponse(options) {
  * @returns {Promise<string>} - The response message from the agent.
  * @throws {Error} - Throws an error if the API call fails or the response format is invalid.
  */
-async function doAgentTask(options) {
-    let { message, systemMessage = "", tools = [], model = "gpt-4o-mini", apiKey = null, maxToolCalls = 25, maxHistory = 100 } = options;
-    if (!message) {
-        throw new Error("Message is required");
+
+function validateOptions(options, allowedParams, requiredParams = []) {
+    for (let key of Object.keys(options)) {
+        if (!allowedParams.has(key)) {
+            throw new Error(`Unexpected parameter: '${key}'. Allowed parameters are: ${[...allowedParams].join(", ")}`);
+        }
     }
+    for (let key of requiredParams) {
+        if (!options[key]) {
+            throw new Error(`Required parameter: '${key}' is missing.`);
+        }
+    }
+}
+
+
+async function doAgentTask(options) {
+    const defaults = {
+        message: "",
+        systemMessage: "",
+        model: "gpt-4o-mini",
+        tools: new Tools(),
+        apiKey: null,
+        maxToolCalls: 25,
+        maxHistory: 100
+    };
+    const required = ["message", "tools"];
+    const settings = { ...defaults, ...options };
+    validateOptions(settings, new Set(Object.keys(defaults)), required);
+
+    let { message, systemMessage, tools, model, apiKey, maxToolCalls, maxHistory } = settings;
     if (apiKey === null) {
         apiKey = process.env.OPENAI_API_KEY;
     }
-    console.log(apiKey);
     const history = new History();
     history.setSystemMessage(systemMessage);
     history.addMessage({ role: "user", content: message });
@@ -189,7 +223,8 @@ class ChatBot {
             maxHistory: 100,
         };
         const settings = { ...defaults, ...options };
-        
+        validateOptions(settings, new Set(Object.keys(defaults)));
+
         this.history = settings.history;
         this.maxHistory = settings.maxHistory;
         this.model = settings.model;
