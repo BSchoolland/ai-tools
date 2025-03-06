@@ -19,6 +19,17 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         });
         console.log('ChatBot: ' + response);
         console.log('\n\n\n==============================================');
+        // claude test
+        console.log('Testing basic LLM response from Claude with system message...');
+        console.log('User: Hello');
+        const responseClaude = await getLLMResponse({
+            message: "Hello",
+            model: "claude-3-haiku-20240307",
+            systemMessage: "Always respond like a pirate.",
+            apiKey: process.env.ANTHROPIC_API_KEY
+        });
+        console.log('ChatBot: ' + responseClaude);
+        console.log('\n\n\n==============================================');
         // successful agent task test
         console.log('Testing agent task...');
         console.log('User: What is the current date and time?');
@@ -29,11 +40,22 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             apiKey: process.env.OPENAI_API_KEY
         });
         console.log('ChatBot: ' + task);
+        // agent task test with claude
+        console.log('\n\n\n==============================================');
+        console.log('Testing agent task with claude...');
+        const taskClaude = await doAgentTask({
+            message: "What is the current date and time?",
+            model: "claude-3-haiku-20240307",
+            tools: new Tools([], true),
+            apiKey: process.env.ANTHROPIC_API_KEY
+        });
+        console.log("User: What is the current date and time?");
+        console.log('ChatBot: ' + taskClaude);
         console.log('\n\n\n==============================================');
         console.log('Testing ChatBot with context retention...');
         const chatbot = new ChatBot({
-            model: "gpt-4o-mini",
-            apiKey: process.env.OPENAI_API_KEY,
+            model: "claude-3-haiku-20240307",
+            apiKey: process.env.ANTHROPIC_API_KEY,
             maxHistory: 10,
             maxToolCalls: 3
         });

@@ -26,10 +26,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["ai", "openai", "utilities", "tools", "ChatBot"],
+  "keywords": [
+    "ai",
+    "openai",
+    "utilities",
+    "tools",
+    "ChatBot"
+  ],
   "author": "Benjamin Schoolland",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "openai": "^4.24.1"
   },
   "peerDependencies": {

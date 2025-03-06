@@ -2,9 +2,10 @@
 import { History } from "../utils/history.js";
 import { Tools } from "./tools.js";
 import { validateOptions } from "./validateOptions.js";
-import { openAiModels } from "./config.js";
-import { openAiCall } from "./apiCalls.js";
+import { openAiModels, anthropicModels } from "./config.js";
+import { openAiCall, anthropicCall } from "./apiCalls.js";
 import { openAiToolLoop } from "./toolLoop.js";
+import { anthropicToolLoop } from "./anthropicToolLoop.js";
 import { doAgentTask } from "./agent.js";
 
 /**
@@ -30,15 +31,35 @@ async function getLLMResponse(options) {
     validateOptions(settings, new Set(Object.keys(defaults)), required);
     
     const { message, systemMessage, model, apiKey } = settings;
-    if (apiKey === null) {
-        apiKey = process.env.OPENAI_API_KEY;
+    
+    // Determine which API to use based on the model
+    let apiKeyToUse = apiKey;
+    if (apiKeyToUse === null) {
+        if (openAiModels.includes(model)) {
+            apiKeyToUse = process.env.OPENAI_API_KEY;
+        } else if (anthropicModels.includes(model)) {
+            apiKeyToUse = process.env.ANTHROPIC_API_KEY;
+        } else {
+            throw new Error(`Model ${model} is not supported`);
+        }
     }
+    
     const history = new History();
     if (systemMessage) {
         history.setSystemMessage(systemMessage);
     }
     history.addMessage({ role: "user", content: message });
-    const response = await openAiCall(history.getHistory(), [], model, apiKey);
+    
+    // Call the appropriate API based on the model
+    let response;
+    if (openAiModels.includes(model)) {
+        response = await openAiCall(history.getHistory(), [], model, apiKeyToUse);
+    } else if (anthropicModels.includes(model)) {
+        response = await anthropicCall(history.getHistory(), [], model, apiKeyToUse);
+    } else {
+        throw new Error(`Model ${model} is not supported`);
+    }
+    
     return response.message;
 }
 
@@ -126,9 +147,13 @@ class ChatBot {
      */
     async sendMessage(userMessage) {
         this.history.addMessage({ role: "user", content: userMessage });
-        // if the model is an openai model, use the openai call function
+        
+        // Determine which API to use based on the model
         if (openAiModels.includes(this.model)) {
             const response = await this.openAiToolLoop();
+            return response.message;
+        } else if (anthropicModels.includes(this.model)) {
+            const response = await this.anthropicToolLoop();
             return response.message;
         } else {
             throw new Error(`Model ${this.model} is not supported`);
@@ -136,9 +161,9 @@ class ChatBot {
     }
 
     /**
-     * Internal function to call the openai tool loop.
+     * Internal function to call the OpenAI tool loop.
      * 
-     * @returns {Promise<string>} - The response message from the ChatBot.
+     * @returns {Promise<Object>} - The response message from the ChatBot.
      */
     async openAiToolLoop() {
         return openAiToolLoop({
@@ -149,7 +174,24 @@ class ChatBot {
             maxToolCalls: this.maxToolCalls,
             maxHistory: this.maxHistory,
             systemMessage: this.systemMessage
-        })
+        });
+    }
+    
+    /**
+     * Internal function to call the Anthropic tool loop.
+     * 
+     * @returns {Promise<Object>} - The response message from the ChatBot.
+     */
+    async anthropicToolLoop() {
+        return anthropicToolLoop({
+            history: this.history,
+            tools: this.tools,
+            model: this.model,
+            apiKey: this.apiKey,
+            maxToolCalls: this.maxToolCalls,
+            maxHistory: this.maxHistory,
+            systemMessage: this.systemMessage
+        });
     }
 }
 
