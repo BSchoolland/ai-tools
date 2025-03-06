@@ -228,9 +228,62 @@ function convertToolsToAnthropic(tools) {
     });
 }
 
-export { openAiCall, anthropicCall, convertHistoryToAnthropic, convertToolsToAnthropic };
+
+/**
+ * Lower level function for calling the OpenAI API.
+ * 
+ */
+async function deepSeekCall(history, tools = [], model = "deepseek-chat", apiKey = null, url = null) {
+    if (apiKey === null) {
+        apiKey = process.env.DEEPSEEK_API_KEY;
+    }
+    if (url === null) {
+        url = "https://api.deepseek.com/chat/completions";
+    }
+    const body = {
+        model: model,
+        messages: history
+    };
+    
+    // Only add tools if they are provided and non-empty
+    if (tools && tools.length > 0) {
+        body.tools = tools;
+    }
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`DeepSeek API Error: ${error.error.message}`);
+    }
+
+    const responseData = await response.json();
+    
+    if (!responseData.choices || !responseData.choices[0] || !responseData.choices[0].message) {
+        throw new Error('Invalid response format from DeepSeek API');
+    }
+    // log any tool calls
+    const message = responseData.choices[0].message.content || '';
+    const tool_calls = responseData.choices[0].message.tool_calls || null;
+    return { message, tool_calls };
+}
+
+export { openAiCall, anthropicCall, deepSeekCall };
 // test anthropic call
 // (async () => {
 //     const msg = await anthropicCall([{ role: "user", content: "Hello" }]);
+//     console.log(msg);
+// })();
+
+// test deep seek call
+// (async () => {
+//     const msg = await deepSeekCall([{ role: "user", content: "Hello" }]);
 //     console.log(msg);
 // })();

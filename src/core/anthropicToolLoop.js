@@ -1,6 +1,6 @@
 import { History } from "../utils/history.js";
 import { Tools } from "./tools.js";
-import { anthropicCall, convertHistoryToAnthropic } from "./apiCalls.js";
+import { anthropicCall } from "./apiCalls.js";
 
 /**
  * Function for getting a response from the Anthropic agent. If tools are needed, it will call them and then loop again.

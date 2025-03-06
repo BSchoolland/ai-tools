@@ -1,10 +1,10 @@
 import { Tools } from "./tools.js";
 import { History } from "../utils/history.js";
 import { validateOptions } from "./validateOptions.js";
-import { openAiModels, anthropicModels } from "./config.js";
+import { openAiModels, anthropicModels, deepSeekModels } from "./config.js";
 import { openAiToolLoop } from "./toolLoop.js";
 import { anthropicToolLoop } from "./anthropicToolLoop.js";
-
+import { deepSeekToolLoop } from "./deepSeekToolLoop.js";
 /**
  * Assigns a task to an AI agent.
  * 
@@ -29,99 +29,49 @@ async function doAgentTask(options) {
         maxToolCalls: 25,
         maxHistory: 100
     };
-    const required = ["message", "tools"];
+    const required = ["message"];
     const settings = { ...defaults, ...options };
     validateOptions(settings, new Set(Object.keys(defaults)), required);
-
-    let { message, systemMessage, tools, model, apiKey, maxToolCalls, maxHistory } = settings;
+    
+    const { message, systemMessage, model, tools, apiKey, maxToolCalls, maxHistory } = settings;
     
     // Determine which API to use based on the model
-    if (apiKey === null) {
+    let apiKeyToUse = apiKey;
+    if (apiKeyToUse === null) {
         if (openAiModels.includes(model)) {
-            apiKey = process.env.OPENAI_API_KEY;
+            apiKeyToUse = process.env.OPENAI_API_KEY;
         } else if (anthropicModels.includes(model)) {
-            apiKey = process.env.ANTHROPIC_API_KEY;
+            apiKeyToUse = process.env.ANTHROPIC_API_KEY;
+        } else if (deepSeekModels.includes(model)) {
+            apiKeyToUse = process.env.DEEPSEEK_API_KEY;
         } else {
             throw new Error(`Model ${model} is not supported`);
         }
     }
     
+    // Create a new history and add the system message if provided
     const history = new History();
-    history.setSystemMessage(systemMessage);
-    history.addMessage({ role: "user", content: message });
-
-    // add a "mark complete" tool to the tools
-    let done = false;
-    let failed = false;
-    function markComplete() {
-        done = true;
-        return "Task completed, you may now reply to the user.";
+    if (systemMessage) {
+        history.setSystemMessage(systemMessage);
     }
-    function markFailed() {
-        failed = true;
-        done = true;
-        return "Task failed, you may now reply to the user.";
-    }
-    const markCompleteTool = {
-        func: markComplete,
-        description: "Mark the task as complete.  This MUST be done before responding to the user.",
-        parameters: {}
-    }
-    const markFailedTool = {
-        func: markFailed,
-        description: "Mark the task as failed",
-        parameters: {}
-    }
-    tools.register(markCompleteTool);
-    tools.register(markFailedTool);
     
-    // Loop until the task is done or failed
-    while (!done) {
-        if (openAiModels.includes(model)) {
-            let response = await openAiToolLoop({
-                history: history,
-                tools: tools,
-                model: model,
-                apiKey: apiKey,
-                maxToolCalls: maxToolCalls,
-                maxHistory: maxHistory
-            });
-            if (response.timedOut && !done) {
-                // if the tool loop timed out and the task is not done, we need to mark the task as failed
-                failed = true;
-                done = true;
-                return response.message;
-            }
-            if (!done) {
-                history.addMessage({ role: "user", content: "Message to user blocked: you must complete the task (preferred) or mark it as failed before responding to the user.  \n(The user will not see this message, so you'll need to repeat yourself if your last message included important information.)" });
-            } else {
-                return response.message;
-            }
-        } else if (anthropicModels.includes(model)) {
-            let response = await anthropicToolLoop({
-                history: history,
-                tools: tools,
-                model: model,
-                apiKey: apiKey,
-                maxToolCalls: maxToolCalls,
-                maxHistory: maxHistory
-            });
-            if (response.timedOut && !done) {
-                // if the tool loop timed out and the task is not done, we need to mark the task as failed
-                failed = true;
-                done = true;
-                return response.message;
-            }
-            if (!done) {
-                history.addMessage({ role: "user", content: "Message to user blocked: you must complete the task (preferred) or mark it as failed before responding to the user.  \n(The user will not see this message, so you'll need to repeat yourself if your last message included important information.)" });
-            } else {
-                return response.message;
-            }
-        } else {
-            done = true;
-            throw new Error(`Model ${model} is not supported`);
-        }
+    // Add the user message
+    history.addMessage({ role: "user", content: message });
+    
+    // Call the appropriate tool loop based on the model
+    let response;
+    if (openAiModels.includes(model)) {
+        response = await openAiToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+    } else if (anthropicModels.includes(model)) {
+        response = await anthropicToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+    } else if (deepSeekModels.includes(model)) {
+        // Works with the openAiToolLoop because the deepSeekCall is exactly the same as the openAiCall
+        response = await deepSeekToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+    } else {
+        throw new Error(`Model ${model} is not supported`);
     }
+    
+    return response.message;
 }
 
 export { doAgentTask };

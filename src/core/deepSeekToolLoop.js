@@ -1,7 +1,6 @@
 import { History } from "../utils/history.js";
 import { Tools } from "./tools.js";
-import { openAiCall, deepSeekCall } from "./apiCalls.js";
-import { openAiModels, deepSeekModels } from "./config.js";
+import { deepSeekCall } from "./apiCalls.js";
 
 /**
  * Function for getting a response from the agent.  If tools are needed, it will call them and then loop again.
@@ -15,30 +14,30 @@ import { openAiModels, deepSeekModels } from "./config.js";
  * @param {number} options.maxHistory - The number of messages that can be stored in the conversation history.
  * @returns {Promise<string>} - The response message from the agent.
  */
-async function openAiToolLoop(options) {
-    const { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
+async function deepSeekToolLoop(options) {
+    let { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
     let callingTools = true;
     let attempts = 0;
+    // DeepSeek has issues with tool calls that cause it to loop infinitely always. 
+    // This is a workaround to limit the number of tool calls to 1.
+    maxToolCalls = 1;
+
     while (callingTools && attempts < maxToolCalls) {
         attempts++;
-        let message, tool_calls;
-        if (openAiModels.includes(model)) {
-            ({ message, tool_calls } = await openAiCall(history.getHistory(maxHistory), tools.getTools(), model, apiKey));
-        } else if (deepSeekModels.includes(model)) {
-            ({ message, tool_calls } = await deepSeekCall(history.getHistory(maxHistory), tools.getTools(), model, apiKey));
-        } else {
-            throw new Error(`Model ${model} is not supported`);
-        }
+        
+        const { message, tool_calls } = await deepSeekCall(history.getHistory(maxHistory), tools.getTools(), model, apiKey);
+        
         if (!tool_calls) {
             // if there are no tool calls, we are done
             callingTools = false;
             history.addMessage({ role: "assistant", content: message });
             return {message, history: history.getHistory(maxHistory), timedOut: false};
         } else {
-            // if there are tool calls, we need to call the tools, then loop again and allow the model to react to the results
-            history.addMessage({ role: "assistant", content: message, tool_calls: tool_calls });
+            console.warn("DeepSeek function calling is very unstable, and is limited to 1 tool call at a time.  Use another model for better results.")
+            // As a workaround for additional tool calls, we will only record the first tool call
+            history.addMessage({ role: "assistant", content: message, tool_calls: [tool_calls[0]] });
             callingTools = true;
-            tool_calls.forEach(tool_call => {
+            [tool_calls[0]].forEach(tool_call => {
                 try {
                     const args = JSON.parse(tool_call.function.arguments);
                     const response = tools.call(tool_call.function.name, args);
@@ -48,6 +47,12 @@ async function openAiToolLoop(options) {
                         tool_call_id: tool_call.id,
                         name: tool_call.function.name
                     });
+                    // TODO: When DeepSeek fixes the issue with function calls, we can remove the following code
+                    // Workaround: add a user message to the history that says the tool call was successful
+                    history.addMessage({ 
+                        role: 'user', 
+                        content: `<tool>Automated tool response for id: ${tool_call.id}: ${response.toString()}</tool>`
+                    });
                 } catch (error) {
                     history.addMessage({ 
                         role: 'tool', 
@@ -55,21 +60,21 @@ async function openAiToolLoop(options) {
                         tool_call_id: tool_call.id,
                         name: tool_call.function.name
                     });
+                    // TODO: When DeepSeek fixes the issue with function calls, we can remove the following code
+                    // Workaround: add a user message to the history that says the tool call was successful
+                    history.addMessage({ 
+                        role: 'user', 
+                        content: `<tool>Automated tool response for id: ${tool_call.id}: ${error.message}</tool>`
+                    });
                 }
             });
         }
     }
     // temporarily disable tool calls and have the model respond to the last tool call
-    let message, tool_calls;
-    if (openAiModels.includes(model)) {
-        ({ message, tool_calls } = await openAiCall(history.getHistory(maxHistory), [], model, apiKey));
-    } else if (deepSeekModels.includes(model)) {
-        ({ message, tool_calls } = await deepSeekCall(history.getHistory(maxHistory), [], model, apiKey));
-    } else {
-        throw new Error(`Model ${model} is not supported`);
-    }
+    const { message } = await deepSeekCall(history.getHistory(maxHistory), [], model, apiKey);
+    
     history.addMessage({ role: "assistant", content: message });
     return {message, history: history.getHistory(maxHistory), timedOut: true};
 }
 
-export { openAiToolLoop };
+export { deepSeekToolLoop };

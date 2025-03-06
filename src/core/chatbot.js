@@ -2,9 +2,10 @@
 import { History } from "../utils/history.js";
 import { Tools } from "./tools.js";
 import { validateOptions } from "./validateOptions.js";
-import { openAiModels, anthropicModels } from "./config.js";
-import { openAiCall, anthropicCall } from "./apiCalls.js";
+import { openAiModels, anthropicModels, deepSeekModels } from "./config.js";
+import { openAiCall, anthropicCall, deepSeekCall } from "./apiCalls.js";
 import { openAiToolLoop } from "./toolLoop.js";
+import { deepSeekToolLoop } from "./deepSeekToolLoop.js";
 import { anthropicToolLoop } from "./anthropicToolLoop.js";
 import { doAgentTask } from "./agent.js";
 
@@ -39,6 +40,8 @@ async function getLLMResponse(options) {
             apiKeyToUse = process.env.OPENAI_API_KEY;
         } else if (anthropicModels.includes(model)) {
             apiKeyToUse = process.env.ANTHROPIC_API_KEY;
+        } else if (deepSeekModels.includes(model)) {
+            apiKeyToUse = process.env.DEEPSEEK_API_KEY;
         } else {
             throw new Error(`Model ${model} is not supported`);
         }
@@ -56,6 +59,8 @@ async function getLLMResponse(options) {
         response = await openAiCall(history.getHistory(), [], model, apiKeyToUse);
     } else if (anthropicModels.includes(model)) {
         response = await anthropicCall(history.getHistory(), [], model, apiKeyToUse);
+    } else if (deepSeekModels.includes(model)) {
+        response = await deepSeekCall(history.getHistory(), [], model, apiKeyToUse);
     } else {
         throw new Error(`Model ${model} is not supported`);
     }
@@ -155,6 +160,9 @@ class ChatBot {
         } else if (anthropicModels.includes(this.model)) {
             const response = await this.anthropicToolLoop();
             return response.message;
+        } else if (deepSeekModels.includes(this.model)) {
+            const response = await this.deepSeekToolLoop();
+            return response.message;
         } else {
             throw new Error(`Model ${this.model} is not supported`);
         }
@@ -184,6 +192,23 @@ class ChatBot {
      */
     async anthropicToolLoop() {
         return anthropicToolLoop({
+            history: this.history,
+            tools: this.tools,
+            model: this.model,
+            apiKey: this.apiKey,
+            maxToolCalls: this.maxToolCalls,
+            maxHistory: this.maxHistory,
+            systemMessage: this.systemMessage
+        });
+    }
+    
+    /**
+     * Internal function to call the DeepSeek tool loop.
+     * 
+     * @returns {Promise<Object>} - The response message from the ChatBot.
+     */
+    async deepSeekToolLoop() {
+        return deepSeekToolLoop({
             history: this.history,
             tools: this.tools,
             model: this.model,
