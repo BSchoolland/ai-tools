@@ -4,15 +4,13 @@ A personal collection of reusable AI utilities for quick project bootstrapping.
 
 ## Requirements
 
-- Node.js >= 14.0.0 (for ES Modules support)
-- Your project must support ES Modules (package.json should have `"type": "module"`)
+- Node.js >= 14.0.0
 
 ## Installation
 
 1. Add to your project's `package.json`:
 ```json
 {
-  "type": "module",  // Required: This package uses ES Modules
   "dependencies": {
     "@bschoolland/ai-tools": "git+https://github.com/bschoolland/ai-tools.git"
   }
