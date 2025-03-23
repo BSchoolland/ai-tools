@@ -174,8 +174,12 @@ class Tools {
 
 export { Tools };
 
-// Test code
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Test code - only run if this is the main module
+const isMainModule = typeof require !== 'undefined' 
+    ? require.main === module
+    : import.meta.url === `file://${process.argv[1]}`;
+
+if (isMainModule) {
     function calculateTotal(price, taxRate = 0.1) {
         return price * (1 + taxRate);
     }

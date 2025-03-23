@@ -3,20 +3,24 @@
   "version": "0.1.0",
   "description": "A collection of reusable AI utilities for quick project bootstrapping",
   "type": "module",
-  "main": "./src/index.js",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
   "exports": {
     ".": {
-      "import": "./src/index.js"
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
     },
     "./core": {
-      "import": "./src/core/index.js"
+      "import": "./dist/esm/core/index.js",
+      "require": "./dist/cjs/core/index.js"
     },
     "./utils": {
-      "import": "./src/utils/index.js"
+      "import": "./dist/esm/utils/index.js",
+      "require": "./dist/cjs/utils/index.js"
     }
   },
   "files": [
-    "src",
+    "dist",
     "README.md",
     "LICENSE"
   ],
@@ -24,7 +28,11 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:esm": "esbuild src/**/*.js --outdir=dist/esm --format=esm --platform=node",
+    "build:cjs": "esbuild src/**/*.js --outdir=dist/cjs --format=cjs --platform=node",
+    "build": "npm run build:esm && npm run build:cjs",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "ai",
@@ -46,5 +54,8 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bschoolland/ai-tools.git"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.2"
   }
 }

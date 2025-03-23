@@ -3,9 +3,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Get the directory name of the current module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Get the directory name of the current module in a way that works for both ESM and CJS
+const __dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 // Configure dotenv to look for .env file in the project root
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
