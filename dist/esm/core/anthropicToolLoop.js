@@ -2,7 +2,7 @@ import { History } from "../utils/history.js";
 import { Tools } from "./tools.js";
 import { anthropicCall } from "./apiCalls.js";
 async function anthropicToolLoop(options) {
-  const { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
+  const { history, tools, model, apiKey, maxToolCalls, maxHistory, customIdentifier } = options;
   let callingTools = true;
   let attempts = 0;
   while (callingTools && attempts < maxToolCalls) {
@@ -18,7 +18,7 @@ async function anthropicToolLoop(options) {
       for (const tool_call of tool_calls2) {
         try {
           const args = JSON.parse(tool_call.function.arguments);
-          const response = await tools.call(tool_call.function.name, args);
+          const response = await tools.call(tool_call.function.name, args, customIdentifier);
           history.addMessage({
             role: "tool",
             content: response.toString(),

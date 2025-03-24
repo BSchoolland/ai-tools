@@ -3,7 +3,7 @@ import { Tools } from "./tools.js";
 import { openAiCall, deepSeekCall } from "./apiCalls.js";
 import { openAiModels, deepSeekModels } from "./config.js";
 async function openAiToolLoop(options) {
-  const { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
+  const { history, tools, model, apiKey, maxToolCalls, maxHistory, customIdentifier } = options;
   let callingTools = true;
   let attempts = 0;
   while (callingTools && attempts < maxToolCalls) {
@@ -26,7 +26,7 @@ async function openAiToolLoop(options) {
       await Promise.all(tool_calls2.map(async (tool_call) => {
         try {
           const args = JSON.parse(tool_call.function.arguments);
-          const response = await tools.call(tool_call.function.name, args);
+          const response = await tools.call(tool_call.function.name, args, customIdentifier);
           history.addMessage({
             role: "tool",
             content: response.toString(),

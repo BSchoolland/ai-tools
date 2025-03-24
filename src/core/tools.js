@@ -37,6 +37,11 @@ class Tools {
     register(tool) {
         const func = typeof tool === 'function' ? tool : tool.func;
         
+        // Check if the tool accepts customIdentifier
+        if (typeof tool !== 'function' && tool.acceptsCustomIdentifier) {
+            func._acceptsCustomIdentifier = true;
+        }
+        
         this.functions.push(func);
         
         if (typeof tool === 'function') {
@@ -139,8 +144,7 @@ class Tools {
         return this.toolsJson;
     }
 
-    async call(toolName, toolArgs) {
-        
+    async call(toolName, toolArgs, customIdentifier = null) {
         // call the tool
         const func = this.functions.find(f => f.name === toolName);
         if (func) {
@@ -148,9 +152,40 @@ class Tools {
                 // Extract parameters in the correct order from the args object
                 const paramNames = this._getParameterNames(func);
                 
-                const args = paramNames.map(name => toolArgs[name]);
+                // Get arguments from toolArgs
+                const extractedArgs = paramNames.map(name => {
+                    // For required parameters that aren't provided, use undefined
+                    // This allows the function to handle missing args with default values
+                    // or throw appropriate errors for required parameters
+                    return name in toolArgs ? toolArgs[name] : undefined;
+                });
                 
-                const result = func(...args);
+                // If customIdentifier is provided and the function accepts it, pass it as additional argument
+                let result;
+                if (customIdentifier !== null && func._acceptsCustomIdentifier) {
+                    // Special case for functions that only have a customIdentifier parameter
+                    if (paramNames.length === 1 && paramNames[0] === 'customIdentifier') {
+                        result = func.call(null, customIdentifier);
+                    } 
+                    // Check if toolArgs actually contains any of the expected parameters
+                    else {
+                        const hasRealArgs = paramNames.some(name => name in toolArgs);
+                        
+                        if (hasRealArgs) {
+                            // Call with normal args, then customIdentifier as extra arg
+                            result = func.call(null, ...extractedArgs, customIdentifier);
+                        } else {
+                            // Pass customIdentifier as the first parameter (for timezone arg)
+                            const firstParamName = paramNames[0];
+                            // If first parameter is provided, use it, otherwise use null + customIdentifier
+                            const firstArg = firstParamName && toolArgs[firstParamName] ? toolArgs[firstParamName] : null;
+                            result = func.call(null, firstArg, customIdentifier);
+                        }
+                    }
+                } else {
+                    result = func.call(null, ...extractedArgs);
+                }
+                
                 // Handle async functions by checking if result is a Promise
                 if (result instanceof Promise) {
                     return await result;
@@ -173,6 +208,16 @@ class Tools {
                 .map(p => p.split('=')[0].trim())
                 .filter(p => p) : 
             [];
+    }
+
+    /**
+     * Mark a function as accepting a customIdentifier parameter
+     * @param {Function} func - The function to mark
+     * @returns {Function} - The function with the _acceptsCustomIdentifier property set
+     */
+    markAsAcceptingCustomIdentifier(func) {
+        func._acceptsCustomIdentifier = true;
+        return func;
     }
 }
 

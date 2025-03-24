@@ -12,10 +12,11 @@ import { anthropicCall } from "./apiCalls.js";
  * @param {string} options.apiKey - The API key for authentication.
  * @param {number} options.maxToolCalls - A limit on the number of tool calls the agent can make.
  * @param {number} options.maxHistory - The number of messages that can be stored in the conversation history.
+ * @param {string} options.customIdentifier - A custom identifier for the tools.
  * @returns {Promise<Object>} - The response message from the agent and updated history.
  */
 async function anthropicToolLoop(options) {
-    const { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
+    const { history, tools, model, apiKey, maxToolCalls, maxHistory, customIdentifier } = options;
     let callingTools = true;
     let attempts = 0;
     
@@ -37,7 +38,7 @@ async function anthropicToolLoop(options) {
             for (const tool_call of tool_calls) {
                 try {
                     const args = JSON.parse(tool_call.function.arguments);
-                    const response = await tools.call(tool_call.function.name, args);
+                    const response = await tools.call(tool_call.function.name, args, customIdentifier);
                     
                     history.addMessage({ 
                         role: 'tool', 

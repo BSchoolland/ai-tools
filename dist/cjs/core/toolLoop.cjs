@@ -25,7 +25,7 @@ var import_tools = require("./tools.cjs");
 var import_apiCalls = require("./apiCalls.cjs");
 var import_config = require("./config.cjs");
 async function openAiToolLoop(options) {
-  const { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
+  const { history, tools, model, apiKey, maxToolCalls, maxHistory, customIdentifier } = options;
   let callingTools = true;
   let attempts = 0;
   while (callingTools && attempts < maxToolCalls) {
@@ -48,7 +48,7 @@ async function openAiToolLoop(options) {
       await Promise.all(tool_calls2.map(async (tool_call) => {
         try {
           const args = JSON.parse(tool_call.function.arguments);
-          const response = await tools.call(tool_call.function.name, args);
+          const response = await tools.call(tool_call.function.name, args, customIdentifier);
           history.addMessage({
             role: "tool",
             content: response.toString(),

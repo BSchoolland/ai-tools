@@ -12,10 +12,11 @@ import { deepSeekCall } from "./apiCalls.js";
  * @param {string} options.apiKey - The API key for authentication.
  * @param {number} options.maxToolCalls - A limit on the number of tool calls the agent can make.
  * @param {number} options.maxHistory - The number of messages that can be stored in the conversation history.
+ * @param {string} options.customIdentifier - The custom identifier for the tools.
  * @returns {Promise<string>} - The response message from the agent.
  */
 async function deepSeekToolLoop(options) {
-    let { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
+    let { history, tools, model, apiKey, maxToolCalls, maxHistory, customIdentifier } = options;
     let callingTools = true;
     let attempts = 0;
     // DeepSeek has issues with tool calls that cause it to loop infinitely always. 
@@ -42,7 +43,7 @@ async function deepSeekToolLoop(options) {
             await Promise.all([tool_calls[0]].map(async (tool_call) => {
                 try {
                     const args = JSON.parse(tool_call.function.arguments);
-                    const response = await tools.call(tool_call.function.name, args);
+                    const response = await tools.call(tool_call.function.name, args, customIdentifier);
                     history.addMessage({ 
                         role: 'tool', 
                         content: response.toString(),

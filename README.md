@@ -375,8 +375,6 @@ const response = await conversation.sendMessage("Hello, how are you?");
 
 // each conversation may optionally be initialized with a custom model, tools object, and system message, which it will use instead of the manager's defaults
 const conversation2 = await manager.getConversation({ conversationID: "345", model: "gpt-4o", tools: new Tools([/* your tools */]), systemMessage: "You are a helpful assistant." });
-
-
 ```
 If the conversationID already exists, the conversation will be retrieved instead of creating a new one, and the manager keeps track of History for each conversation in memory for it's TTL
 
@@ -385,6 +383,84 @@ The saveCallback is called whenever a message is sent, and the loadCallback is c
 Note that passing custom model, systemMessage, or tools as options to getConversation will not work for existing conversations, they will only be used if the conversation does not already exist.
 
 Again, this feature is still a work in progress and may need to be expanded or modified in the future.
+
+## Custom Identifier for User-Specific Context
+
+BroilerplateAI supports passing user-specific context to tools through the `customIdentifier` feature. This allows you to:
+
+1. Pass user permissions and preferences to tools
+2. Provide user-specific data like timezones, locale settings, or organization information
+3. Apply authentication context without modifying tool signatures
+
+### Using customIdentifier
+
+#### At Chatbot Creation
+
+```javascript
+// Create a manager with a default customIdentifier
+const manager = new ChatbotManager({
+  model: "gpt-4o",
+  tools: myTools,
+  systemMessage: "You are a helpful assistant",
+  customIdentifier: {
+    defaultPermission: "user"  // Applied to all conversations by default
+  }
+});
+
+// Create a conversation with a specific customIdentifier
+const userConversation = await manager.getConversation({
+  conversationID: "user_123",
+  customIdentifier: {
+    timezone: "America/New_York",
+    permissions: ["read", "write"],
+    userId: "user_123"
+  }
+});
+```
+
+#### During a Conversation
+
+You can update the customIdentifier at any time:
+
+```javascript
+// Update a user's customIdentifier
+manager.setCustomIdentifier("user_123", {
+  timezone: "Europe/London",
+  permissions: ["read", "write", "admin"],
+  userId: "user_123"
+});
+```
+
+#### Tools that Use customIdentifier
+
+Register tools that need the customIdentifier:
+
+```javascript
+// Define a tool that uses customIdentifier
+function getUserTimeZone(customIdentifier = null) {
+  if (!customIdentifier || !customIdentifier.timezone) {
+    return "No timezone configured";
+  }
+  return `User timezone: ${customIdentifier.timezone}`;
+}
+
+// Register the tool with acceptsCustomIdentifier flag
+tools.register({
+  func: getUserTimeZone,
+  acceptsCustomIdentifier: true,  // Mark this tool as needing customIdentifier
+  description: "Get the user's timezone",
+  parameters: {}  // No user-provided parameters needed
+});
+```
+
+### Benefits
+
+- **Permissions Control**: Gate access to sensitive information based on user roles
+- **Personalization**: Provide user-specific responses without complex parameter passing
+- **Stateful Context**: Pass session information that persists across multiple tool calls
+- **Clean API Design**: Tools can accept user context without cluttering their interfaces
+
+The `customIdentifier` is transparently handled by the chatbot system and automatically passed to tools that need it, regardless of which AI model provider you're using.
 
 ## General Troubleshooting
 

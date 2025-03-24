@@ -24,7 +24,7 @@ var import_history = require("../utils/history.cjs");
 var import_tools = require("./tools.cjs");
 var import_apiCalls = require("./apiCalls.cjs");
 async function deepSeekToolLoop(options) {
-  let { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
+  let { history, tools, model, apiKey, maxToolCalls, maxHistory, customIdentifier } = options;
   let callingTools = true;
   let attempts = 0;
   maxToolCalls = 1;
@@ -42,7 +42,7 @@ async function deepSeekToolLoop(options) {
       await Promise.all([tool_calls[0]].map(async (tool_call) => {
         try {
           const args = JSON.parse(tool_call.function.arguments);
-          const response = await tools.call(tool_call.function.name, args);
+          const response = await tools.call(tool_call.function.name, args, customIdentifier);
           history.addMessage({
             role: "tool",
             content: response.toString(),

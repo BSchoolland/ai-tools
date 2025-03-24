@@ -56,7 +56,8 @@ class ChatBot {
       apiKey: null,
       history: new History(),
       maxToolCalls: 5,
-      maxHistory: 100
+      maxHistory: 100,
+      customIdentifier: null
     };
     const settings = { ...defaults, ...options };
     validateOptions(settings, new Set(Object.keys(defaults)));
@@ -68,6 +69,7 @@ class ChatBot {
     this.apiKey = settings.apiKey;
     this.tools = settings.tools;
     this.maxToolCalls = settings.maxToolCalls;
+    this.customIdentifier = settings.customIdentifier;
   }
   /**
    * Set the tools that the ChatBot can use.
@@ -106,6 +108,14 @@ class ChatBot {
     this.history.setSystemMessage(message);
   }
   /**
+   * Set the custom identifier that will be passed to tools.
+   * 
+   * @param {Object} customIdentifier - The custom identifier to pass to tools.
+   */
+  setCustomIdentifier(customIdentifier) {
+    this.customIdentifier = customIdentifier;
+  }
+  /**
    * Send a user message and get a response.
    * 
    * @param {string} userMessage - The user message to send to the ChatBot.
@@ -139,7 +149,8 @@ class ChatBot {
       apiKey: this.apiKey,
       maxToolCalls: this.maxToolCalls,
       maxHistory: this.maxHistory,
-      systemMessage: this.systemMessage
+      systemMessage: this.systemMessage,
+      customIdentifier: this.customIdentifier
     });
   }
   /**
@@ -155,7 +166,8 @@ class ChatBot {
       apiKey: this.apiKey,
       maxToolCalls: this.maxToolCalls,
       maxHistory: this.maxHistory,
-      systemMessage: this.systemMessage
+      systemMessage: this.systemMessage,
+      customIdentifier: this.customIdentifier
     });
   }
   /**
@@ -171,7 +183,8 @@ class ChatBot {
       apiKey: this.apiKey,
       maxToolCalls: this.maxToolCalls,
       maxHistory: this.maxHistory,
-      systemMessage: this.systemMessage
+      systemMessage: this.systemMessage,
+      customIdentifier: this.customIdentifier
     });
   }
 }

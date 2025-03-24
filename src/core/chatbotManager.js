@@ -3,10 +3,11 @@ import { ChatBot } from "./chatbot.js";
 import { Tools } from "./tools.js";
 
 class ChatbotType {
-    constructor(model, tools, systemMessage) {
+    constructor(model, tools, systemMessage, customIdentifier = null) {
         this.model = model;
         this.tools = tools;
         this.systemMessage = systemMessage;
+        this.customIdentifier = customIdentifier;
     }
 }
 
@@ -20,7 +21,8 @@ class Conversation {
         this.chatbot = existingChatbot || new ChatBot({
             model: chatbotType.model,
             tools: chatbotType.tools,
-            systemMessage: chatbotType.systemMessage
+            systemMessage: chatbotType.systemMessage,
+            customIdentifier: chatbotType.customIdentifier
         });
         this.saveCallback = saveCallback;
         this.lastUpdateTime = Date.now();
@@ -31,6 +33,13 @@ class Conversation {
         this.lastUpdateTime = Date.now(); // Update the timestamp after interaction
         this.save();
         return response;
+    }
+
+    // Set a new customIdentifier for this conversation's chatbot
+    setCustomIdentifier(customIdentifier) {
+        if (this.chatbot) {
+            this.chatbot.setCustomIdentifier(customIdentifier);
+        }
     }
 
     async save() {
@@ -63,13 +72,14 @@ class ChatbotManager {
         model = "gpt-4o-mini",
         tools = new Tools(),
         systemMessage = "",
+        customIdentifier = null,
         saveCallback = null,
         loadCallback = null,
         conversationTTL = 1000 * 60 * 60 * 24 * 30, // 30 days
         checkInterval = 1000 * 60 * 60 * 24 // 1 day
     }) {
         this.conversations = {};
-        this.defaultChatbotType = new ChatbotType(model, tools, systemMessage);
+        this.defaultChatbotType = new ChatbotType(model, tools, systemMessage, customIdentifier);
         this.saveCallback = saveCallback;
         this.loadCallback = loadCallback;
         this.conversationTTL = conversationTTL;
@@ -111,13 +121,20 @@ class ChatbotManager {
             model = null,
             tools = null,
             systemMessage = null,
+            customIdentifier = null,
             existingChatbot = null,
-            saveCallback = this.saveCallback
+            saveCallback = this.saveCallback,
         }
     ) {
         // If conversation exists, update last access time and return it
         if (this.conversations[conversationID]) {
             this.conversations[conversationID].lastUpdateTime = Date.now();
+            
+            // If a new customIdentifier is provided, update the existing conversation
+            if (customIdentifier !== null) {
+                this.conversations[conversationID].setCustomIdentifier(customIdentifier);
+            }
+            
             return this.conversations[conversationID];
         }
 
@@ -130,7 +147,8 @@ class ChatbotManager {
                     const loadedChatbot = new ChatBot({
                         model: model || chatbotType.model,
                         tools: tools || chatbotType.tools,
-                        history: savedHistory
+                        history: savedHistory,
+                        customIdentifier: customIdentifier || chatbotType.customIdentifier
                     });
                     existingChatbot = loadedChatbot;
                 }
@@ -142,17 +160,27 @@ class ChatbotManager {
 
         if (existingChatbot) { // if an existing chatbot is provided, use it
             this.conversations[conversationID] = new Conversation(conversationID, null, existingChatbot, saveCallback);
-        } else if (model || tools || systemMessage) { // if any custom parameters are provided, create a new chatbot type for this conversation
+        } else if (model || tools || systemMessage || customIdentifier) { // if any custom parameters are provided, create a new chatbot type for this conversation
             const customChatbotType = new ChatbotType(
                 model || this.defaultChatbotType.model,
                 tools || this.defaultChatbotType.tools,
-                systemMessage || this.defaultChatbotType.systemMessage
+                systemMessage || this.defaultChatbotType.systemMessage,
+                customIdentifier || this.defaultChatbotType.customIdentifier
             );
             this.conversations[conversationID] = new Conversation(conversationID, customChatbotType, null, saveCallback);
         } else { // otherwise, use the default chatbot type
             this.conversations[conversationID] = new Conversation(conversationID, chatbotType, null, saveCallback);
         }
         return this.conversations[conversationID];
+    }
+
+    // Set a new customIdentifier for a specific conversation
+    setCustomIdentifier(conversationID, customIdentifier) {
+        if (this.conversations[conversationID]) {
+            this.conversations[conversationID].setCustomIdentifier(customIdentifier);
+            return true;
+        }
+        return false;
     }
 
     // Save all active conversations

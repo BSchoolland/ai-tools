@@ -13,12 +13,13 @@ async function doAgentTask(options) {
     tools: new Tools(),
     apiKey: null,
     maxToolCalls: 25,
-    maxHistory: 100
+    maxHistory: 100,
+    customIdentifier: null
   };
   const required = ["message"];
   const settings = { ...defaults, ...options };
   validateOptions(settings, new Set(Object.keys(defaults)), required);
-  const { message, systemMessage, model, tools, apiKey, maxToolCalls, maxHistory } = settings;
+  const { message, systemMessage, model, tools, apiKey, maxToolCalls, maxHistory, customIdentifier } = settings;
   let apiKeyToUse = apiKey;
   if (apiKeyToUse === null) {
     if (openAiModels.includes(model)) {
@@ -38,11 +39,11 @@ async function doAgentTask(options) {
   history.addMessage({ role: "user", content: message });
   let response;
   if (openAiModels.includes(model)) {
-    response = await openAiToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+    response = await openAiToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory, customIdentifier });
   } else if (anthropicModels.includes(model)) {
-    response = await anthropicToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+    response = await anthropicToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory, customIdentifier });
   } else if (deepSeekModels.includes(model)) {
-    response = await deepSeekToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+    response = await deepSeekToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory, customIdentifier });
   } else {
     throw new Error(`Model ${model} is not supported`);
   }

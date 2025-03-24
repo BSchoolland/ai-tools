@@ -79,6 +79,7 @@ async function getLLMResponse(options) {
  * @param {History} [options.history=new History()] - The conversation history if you want to start the conversation with existing messages.
  * @param {number} [options.maxToolCalls=5] - A limit on the number of tool calls the ChatBot can make per message.
  * @param {number} [options.maxHistory=100] - The number of messages that can be stored in the conversation history.
+ * @param {Object} [options.customIdentifier=null] - Custom identifier to pass to tools, can include permissions, timezone, etc.
  */
 class ChatBot {
     constructor(options = {}) {
@@ -90,6 +91,7 @@ class ChatBot {
             history: new History(),
             maxToolCalls: 5,
             maxHistory: 100,
+            customIdentifier: null
         };
         const settings = { ...defaults, ...options };
         validateOptions(settings, new Set(Object.keys(defaults)));
@@ -102,6 +104,7 @@ class ChatBot {
         this.apiKey = settings.apiKey;
         this.tools = settings.tools;
         this.maxToolCalls = settings.maxToolCalls;
+        this.customIdentifier = settings.customIdentifier;
     }
 
     /**
@@ -145,6 +148,15 @@ class ChatBot {
     }
 
     /**
+     * Set the custom identifier that will be passed to tools.
+     * 
+     * @param {Object} customIdentifier - The custom identifier to pass to tools.
+     */
+    setCustomIdentifier(customIdentifier) {
+        this.customIdentifier = customIdentifier;
+    }
+
+    /**
      * Send a user message and get a response.
      * 
      * @param {string} userMessage - The user message to send to the ChatBot.
@@ -181,7 +193,8 @@ class ChatBot {
             apiKey: this.apiKey,
             maxToolCalls: this.maxToolCalls,
             maxHistory: this.maxHistory,
-            systemMessage: this.systemMessage
+            systemMessage: this.systemMessage,
+            customIdentifier: this.customIdentifier
         });
     }
     
@@ -198,7 +211,8 @@ class ChatBot {
             apiKey: this.apiKey,
             maxToolCalls: this.maxToolCalls,
             maxHistory: this.maxHistory,
-            systemMessage: this.systemMessage
+            systemMessage: this.systemMessage,
+            customIdentifier: this.customIdentifier
         });
     }
     
@@ -215,7 +229,8 @@ class ChatBot {
             apiKey: this.apiKey,
             maxToolCalls: this.maxToolCalls,
             maxHistory: this.maxHistory,
-            systemMessage: this.systemMessage
+            systemMessage: this.systemMessage,
+            customIdentifier: this.customIdentifier
         });
     }
 }

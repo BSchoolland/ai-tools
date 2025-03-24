@@ -35,12 +35,13 @@ async function doAgentTask(options) {
     tools: new import_tools.Tools(),
     apiKey: null,
     maxToolCalls: 25,
-    maxHistory: 100
+    maxHistory: 100,
+    customIdentifier: null
   };
   const required = ["message"];
   const settings = { ...defaults, ...options };
   (0, import_validateOptions.validateOptions)(settings, new Set(Object.keys(defaults)), required);
-  const { message, systemMessage, model, tools, apiKey, maxToolCalls, maxHistory } = settings;
+  const { message, systemMessage, model, tools, apiKey, maxToolCalls, maxHistory, customIdentifier } = settings;
   let apiKeyToUse = apiKey;
   if (apiKeyToUse === null) {
     if (import_config.openAiModels.includes(model)) {
@@ -60,11 +61,11 @@ async function doAgentTask(options) {
   history.addMessage({ role: "user", content: message });
   let response;
   if (import_config.openAiModels.includes(model)) {
-    response = await (0, import_toolLoop.openAiToolLoop)({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+    response = await (0, import_toolLoop.openAiToolLoop)({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory, customIdentifier });
   } else if (import_config.anthropicModels.includes(model)) {
-    response = await (0, import_anthropicToolLoop.anthropicToolLoop)({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+    response = await (0, import_anthropicToolLoop.anthropicToolLoop)({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory, customIdentifier });
   } else if (import_config.deepSeekModels.includes(model)) {
-    response = await (0, import_deepSeekToolLoop.deepSeekToolLoop)({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+    response = await (0, import_deepSeekToolLoop.deepSeekToolLoop)({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory, customIdentifier });
   } else {
     throw new Error(`Model ${model} is not supported`);
   }

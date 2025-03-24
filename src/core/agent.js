@@ -16,6 +16,7 @@ import { deepSeekToolLoop } from "./deepSeekToolLoop.js";
  * @param {string} [options.apiKey] - The API key for authentication. If not provided, it will use the appropriate API key based on the model.
  * @param {number} [options.maxToolCalls=25] - A limit on the number of tool calls the agent can make.
  * @param {number} [options.maxHistory=100] - The number of messages that can be stored in the conversation history.
+ * @param {Object} [options.customIdentifier=null] - Custom identifier to pass to tools, can include permissions, timezone, etc.
  * @returns {string} - The response message from the agent.
  * @throws {Error} - Throws an error if the API call fails
  */
@@ -27,13 +28,14 @@ async function doAgentTask(options) {
         tools: new Tools(),
         apiKey: null,
         maxToolCalls: 25,
-        maxHistory: 100
+        maxHistory: 100,
+        customIdentifier: null
     };
     const required = ["message"];
     const settings = { ...defaults, ...options };
     validateOptions(settings, new Set(Object.keys(defaults)), required);
     
-    const { message, systemMessage, model, tools, apiKey, maxToolCalls, maxHistory } = settings;
+    const { message, systemMessage, model, tools, apiKey, maxToolCalls, maxHistory, customIdentifier } = settings;
     
     // Determine which API to use based on the model
     let apiKeyToUse = apiKey;
@@ -61,12 +63,12 @@ async function doAgentTask(options) {
     // Call the appropriate tool loop based on the model
     let response;
     if (openAiModels.includes(model)) {
-        response = await openAiToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+        response = await openAiToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory, customIdentifier });
     } else if (anthropicModels.includes(model)) {
-        response = await anthropicToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+        response = await anthropicToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory, customIdentifier });
     } else if (deepSeekModels.includes(model)) {
         // Works with the openAiToolLoop because the deepSeekCall is exactly the same as the openAiCall
-        response = await deepSeekToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory });
+        response = await deepSeekToolLoop({ history, tools, model, apiKey: apiKeyToUse, maxToolCalls, maxHistory, customIdentifier });
     } else {
         throw new Error(`Model ${model} is not supported`);
     }

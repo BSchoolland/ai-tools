@@ -22,6 +22,9 @@ class Tools {
   }
   register(tool) {
     const func = typeof tool === "function" ? tool : tool.func;
+    if (typeof tool !== "function" && tool.acceptsCustomIdentifier) {
+      func._acceptsCustomIdentifier = true;
+    }
     this.functions.push(func);
     if (typeof tool === "function") {
       this.toolsJson.push(this.generateToolJson(tool));
@@ -95,13 +98,31 @@ class Tools {
   getTools() {
     return this.toolsJson;
   }
-  async call(toolName, toolArgs) {
+  async call(toolName, toolArgs, customIdentifier = null) {
     const func = this.functions.find((f) => f.name === toolName);
     if (func) {
       try {
         const paramNames = this._getParameterNames(func);
-        const args = paramNames.map((name) => toolArgs[name]);
-        const result = func(...args);
+        const extractedArgs = paramNames.map((name) => {
+          return name in toolArgs ? toolArgs[name] : void 0;
+        });
+        let result;
+        if (customIdentifier !== null && func._acceptsCustomIdentifier) {
+          if (paramNames.length === 1 && paramNames[0] === "customIdentifier") {
+            result = func.call(null, customIdentifier);
+          } else {
+            const hasRealArgs = paramNames.some((name) => name in toolArgs);
+            if (hasRealArgs) {
+              result = func.call(null, ...extractedArgs, customIdentifier);
+            } else {
+              const firstParamName = paramNames[0];
+              const firstArg = firstParamName && toolArgs[firstParamName] ? toolArgs[firstParamName] : null;
+              result = func.call(null, firstArg, customIdentifier);
+            }
+          }
+        } else {
+          result = func.call(null, ...extractedArgs);
+        }
         if (result instanceof Promise) {
           return await result;
         }
@@ -116,6 +137,15 @@ class Tools {
   _getParameterNames(func) {
     const paramMatch = func.toString().match(/\((.*?)\)/);
     return paramMatch ? paramMatch[1].split(",").map((p) => p.trim()).map((p) => p.split("=")[0].trim()).filter((p) => p) : [];
+  }
+  /**
+   * Mark a function as accepting a customIdentifier parameter
+   * @param {Function} func - The function to mark
+   * @returns {Function} - The function with the _acceptsCustomIdentifier property set
+   */
+  markAsAcceptingCustomIdentifier(func) {
+    func._acceptsCustomIdentifier = true;
+    return func;
   }
 }
 const isMainModule = typeof require !== "undefined" ? require.main === module : import.meta.url && import.meta.url === `file://${process.argv[1]}`;

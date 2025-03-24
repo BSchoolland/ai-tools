@@ -13,10 +13,11 @@ import { openAiModels, deepSeekModels } from "./config.js";
  * @param {string} options.apiKey - The API key for authentication.
  * @param {number} options.maxToolCalls - A limit on the number of tool calls the agent can make.
  * @param {number} options.maxHistory - The number of messages that can be stored in the conversation history.
+ * @param {string} options.customIdentifier - A custom identifier for the tool calls.
  * @returns {Promise<string>} - The response message from the agent.
  */
 async function openAiToolLoop(options) {
-    const { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
+    const { history, tools, model, apiKey, maxToolCalls, maxHistory, customIdentifier } = options;
     let callingTools = true;
     let attempts = 0;
     while (callingTools && attempts < maxToolCalls) {
@@ -43,7 +44,8 @@ async function openAiToolLoop(options) {
             await Promise.all(tool_calls.map(async (tool_call) => {
                 try {
                     const args = JSON.parse(tool_call.function.arguments);
-                    const response = await tools.call(tool_call.function.name, args);
+                    // Pass the customIdentifier to the tool
+                    const response = await tools.call(tool_call.function.name, args, customIdentifier);
                     history.addMessage({ 
                         role: 'tool', 
                         content: response.toString(),
