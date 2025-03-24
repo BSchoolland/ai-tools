@@ -20,9 +20,9 @@ __export(deepSeekToolLoop_exports, {
   deepSeekToolLoop: () => deepSeekToolLoop
 });
 module.exports = __toCommonJS(deepSeekToolLoop_exports);
-var import_history = require("../utils/history.js");
-var import_tools = require("./tools.js");
-var import_apiCalls = require("./apiCalls.js");
+var import_history = require("../utils/history.cjs");
+var import_tools = require("./tools.cjs");
+var import_apiCalls = require("./apiCalls.cjs");
 async function deepSeekToolLoop(options) {
   let { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
   let callingTools = true;

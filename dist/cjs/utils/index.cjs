@@ -20,7 +20,7 @@ __export(utils_exports, {
   History: () => import_history.History
 });
 module.exports = __toCommonJS(utils_exports);
-var import_history = require("./history.js");
+var import_history = require("./history.cjs");
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   History

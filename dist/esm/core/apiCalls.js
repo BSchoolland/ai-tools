@@ -2,8 +2,15 @@ import Anthropic from "@anthropic-ai/sdk";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-const __dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+let currentDirPath;
+if (typeof __dirname !== "undefined") {
+  currentDirPath = __dirname;
+} else {
+  const currentFileUrl = import.meta.url;
+  const currentFilePath = fileURLToPath(currentFileUrl);
+  currentDirPath = path.dirname(currentFilePath);
+}
+dotenv.config({ path: path.resolve(currentDirPath, "../../.env") });
 async function openAiCall(history, tools = [], model = "gpt-4o-mini", apiKey = null) {
   if (apiKey === null) {
     apiKey = process.env.OPENAI_API_KEY;

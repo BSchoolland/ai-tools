@@ -20,13 +20,13 @@ __export(agent_exports, {
   doAgentTask: () => doAgentTask
 });
 module.exports = __toCommonJS(agent_exports);
-var import_tools = require("./tools.js");
-var import_history = require("../utils/history.js");
-var import_validateOptions = require("./validateOptions.js");
-var import_config = require("./config.js");
-var import_toolLoop = require("./toolLoop.js");
-var import_anthropicToolLoop = require("./anthropicToolLoop.js");
-var import_deepSeekToolLoop = require("./deepSeekToolLoop.js");
+var import_tools = require("./tools.cjs");
+var import_history = require("../utils/history.cjs");
+var import_validateOptions = require("./validateOptions.cjs");
+var import_config = require("./config.cjs");
+var import_toolLoop = require("./toolLoop.cjs");
+var import_anthropicToolLoop = require("./anthropicToolLoop.cjs");
+var import_deepSeekToolLoop = require("./deepSeekToolLoop.cjs");
 async function doAgentTask(options) {
   const defaults = {
     message: "",

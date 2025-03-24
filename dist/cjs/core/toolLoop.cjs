@@ -15,21 +15,29 @@ var __copyProps = (to, from, except, desc) => {
   return to;
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var anthropicToolLoop_exports = {};
-__export(anthropicToolLoop_exports, {
-  anthropicToolLoop: () => anthropicToolLoop
+var toolLoop_exports = {};
+__export(toolLoop_exports, {
+  openAiToolLoop: () => openAiToolLoop
 });
-module.exports = __toCommonJS(anthropicToolLoop_exports);
-var import_history = require("../utils/history.js");
-var import_tools = require("./tools.js");
-var import_apiCalls = require("./apiCalls.js");
-async function anthropicToolLoop(options) {
+module.exports = __toCommonJS(toolLoop_exports);
+var import_history = require("../utils/history.cjs");
+var import_tools = require("./tools.cjs");
+var import_apiCalls = require("./apiCalls.cjs");
+var import_config = require("./config.cjs");
+async function openAiToolLoop(options) {
   const { history, tools, model, apiKey, maxToolCalls, maxHistory } = options;
   let callingTools = true;
   let attempts = 0;
   while (callingTools && attempts < maxToolCalls) {
     attempts++;
-    const { message: message2, tool_calls: tool_calls2 } = await (0, import_apiCalls.anthropicCall)(history.getHistory(maxHistory), tools.getTools(), model, apiKey);
+    let message2, tool_calls2;
+    if (import_config.openAiModels.includes(model)) {
+      ({ message: message2, tool_calls: tool_calls2 } = await (0, import_apiCalls.openAiCall)(history.getHistory(maxHistory), tools.getTools(), model, apiKey));
+    } else if (import_config.deepSeekModels.includes(model)) {
+      ({ message: message2, tool_calls: tool_calls2 } = await (0, import_apiCalls.deepSeekCall)(history.getHistory(maxHistory), tools.getTools(), model, apiKey));
+    } else {
+      throw new Error(`Model ${model} is not supported`);
+    }
     if (!tool_calls2) {
       callingTools = false;
       history.addMessage({ role: "assistant", content: message2 });
@@ -37,7 +45,7 @@ async function anthropicToolLoop(options) {
     } else {
       history.addMessage({ role: "assistant", content: message2, tool_calls: tool_calls2 });
       callingTools = true;
-      for (const tool_call of tool_calls2) {
+      tool_calls2.forEach((tool_call) => {
         try {
           const args = JSON.parse(tool_call.function.arguments);
           const response = tools.call(tool_call.function.name, args);
@@ -55,14 +63,21 @@ async function anthropicToolLoop(options) {
             name: tool_call.function.name
           });
         }
-      }
+      });
     }
   }
-  const { message, tool_calls } = await (0, import_apiCalls.anthropicCall)(history.getHistory(maxHistory), [], model, apiKey);
+  let message, tool_calls;
+  if (import_config.openAiModels.includes(model)) {
+    ({ message, tool_calls } = await (0, import_apiCalls.openAiCall)(history.getHistory(maxHistory), [], model, apiKey));
+  } else if (import_config.deepSeekModels.includes(model)) {
+    ({ message, tool_calls } = await (0, import_apiCalls.deepSeekCall)(history.getHistory(maxHistory), [], model, apiKey));
+  } else {
+    throw new Error(`Model ${model} is not supported`);
+  }
   history.addMessage({ role: "assistant", content: message });
   return { message, history: history.getHistory(maxHistory), timedOut: true };
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  anthropicToolLoop
+  openAiToolLoop
 });

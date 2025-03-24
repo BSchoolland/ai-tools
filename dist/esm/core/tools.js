@@ -115,7 +115,7 @@ class Tools {
     return paramMatch ? paramMatch[1].split(",").map((p) => p.trim()).map((p) => p.split("=")[0].trim()).filter((p) => p) : [];
   }
 }
-const isMainModule = typeof require !== "undefined" ? require.main === module : import.meta.url === `file://${process.argv[1]}`;
+const isMainModule = typeof require !== "undefined" ? require.main === module : import.meta.url && import.meta.url === `file://${process.argv[1]}`;
 if (isMainModule) {
   let calculateTotal = function(price, taxRate = 0.1) {
     return price * (1 + taxRate);

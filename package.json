@@ -3,20 +3,20 @@
   "version": "0.1.0",
   "description": "A collection of reusable AI utilities for quick project bootstrapping",
   "type": "module",
-  "main": "./dist/cjs/index.js",
+  "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "require": "./dist/cjs/index.cjs"
     },
     "./core": {
       "import": "./dist/esm/core/index.js",
-      "require": "./dist/cjs/core/index.js"
+      "require": "./dist/cjs/core/index.cjs"
     },
     "./utils": {
       "import": "./dist/esm/utils/index.js",
-      "require": "./dist/cjs/utils/index.js"
+      "require": "./dist/cjs/utils/index.cjs"
     }
   },
   "files": [
@@ -30,8 +30,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:esm": "esbuild src/index.js src/**/*.js --outdir=dist/esm --format=esm --platform=node",
-    "build:cjs": "esbuild src/index.js src/**/*.js --outdir=dist/cjs --format=cjs --platform=node",
-    "build": "npm run build:esm && npm run build:cjs",
+    "build:cjs": "esbuild src/index.js src/**/*.js --outdir=dist/cjs --format=cjs --platform=node --out-extension:.js=.cjs",
+    "fix:cjs": "node scripts/fix-cjs.js",
+    "build": "npm run build:esm && npm run build:cjs && npm run fix:cjs",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build"
   },

@@ -37,8 +37,15 @@ var import_dotenv = __toESM(require("dotenv"), 1);
 var import_path = __toESM(require("path"), 1);
 var import_url = require("url");
 const import_meta = {};
-const __dirname = typeof __dirname !== "undefined" ? __dirname : import_path.default.dirname((0, import_url.fileURLToPath)(import_meta.url));
-import_dotenv.default.config({ path: import_path.default.resolve(__dirname, "../../.env") });
+let currentDirPath;
+if (typeof __dirname !== "undefined") {
+  currentDirPath = __dirname;
+} else {
+  const currentFileUrl = import_meta.url;
+  const currentFilePath = (0, import_url.fileURLToPath)(currentFileUrl);
+  currentDirPath = import_path.default.dirname(currentFilePath);
+}
+import_dotenv.default.config({ path: import_path.default.resolve(currentDirPath, "../../.env") });
 async function openAiCall(history, tools = [], model = "gpt-4o-mini", apiKey = null) {
   if (apiKey === null) {
     apiKey = process.env.OPENAI_API_KEY;
