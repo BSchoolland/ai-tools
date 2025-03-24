@@ -17,9 +17,11 @@ module.exports = __toCommonJS(src_exports);
 __reExport(src_exports, require("./core/chatbot.cjs"), module.exports);
 __reExport(src_exports, require("./core/tools.cjs"), module.exports);
 __reExport(src_exports, require("./utils/history.cjs"), module.exports);
+__reExport(src_exports, require("./core/chatbotManager.cjs"), module.exports);
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ...require("./core/chatbot.cjs"),
   ...require("./core/tools.cjs"),
-  ...require("./utils/history.cjs")
+  ...require("./utils/history.cjs"),
+  ...require("./core/chatbotManager.cjs")
 });

@@ -1,5 +1,6 @@
 import { ChatBot, getLLMResponse, doAgentTask, Tools, History } from "./src/index.js"
 import { openAiModels, anthropicModels, deepSeekModels } from "./src/core/config.js";
+import { ChatbotManager } from "./src/core/chatbotManager.js";
 
 if (import.meta.url === `file://${process.argv[1]}`) {
     // import .env
@@ -8,10 +9,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         dotenv.config();
 
         console.log("Running tests...");
-        const model = 'deepseek-chat';
-        if (!openAiModels.includes(model) && !anthropicModels.includes(model) && !deepSeekModels.includes(model)) {
-            throw new Error(`Model ${model} is not supported`);
-        }
+        const model = 'manager';
+        // if (!openAiModels.includes(model) && !anthropicModels.includes(model) && !deepSeekModels.includes(model)) {
+        //     throw new Error(`Model ${model} is not supported`);
+        // }
         if (openAiModels.includes(model)) {
             //==========================================================================
             // SECTION 1: OPENAI TESTS
@@ -190,6 +191,49 @@ if (import.meta.url === `file://${process.argv[1]}`) {
                 maxToolCalls: 2
                 });
                 console.log('ChatBot: ' + taskDeepSeek2);
+        } else if (model === 'manager') {
+            console.log('\n\n\n==============================================');
+            console.log('CHATBOT MANAGER TESTS');
+            console.log('==============================================');
+            const manager = new ChatbotManager({
+                model: "gpt-4o-mini",
+                apiKey: process.env.OPENAI_API_KEY,
+                systemMessage: "You are a helpful assistant.",
+                tools: new Tools([], true),
+                saveCallback: async (conversationID, history) => {
+                    console.log(`Saving conversation for user ${conversationID}:`, history.length);
+                }
+            });
+            console.log('Testing with all defaults...');
+            const conversation1 = await manager.getConversation({
+                conversationID: "123",
+            });
+            const response1 = await conversation1.sendMessage("Hello, remember the number 42.");
+            console.log('ChatBot: ' + response1);
+            console.log('Testing with custom model...');
+            const conversation2 = await manager.getConversation({
+                conversationID: "456",
+                model: "claude-3-haiku-20240307",
+                apiKey: process.env.ANTHROPIC_API_KEY,
+            });
+            const response2 = await conversation2.sendMessage("Were you created by OpenAI or Anthropic?");
+            console.log('ChatBot: ' + response2);
+
+            console.log('Testing with tool call requested...');
+            const conversation3 = await manager.getConversation({
+                conversationID: "789",
+                tools: new Tools([], true),
+            });
+            const response3 = await conversation3.sendMessage("What is the current date and time in California?");
+            console.log('ChatBot: ' + response3);
+            console.log('testing an existing conversation...');
+            const conversation4 = await manager.getConversation({
+                conversationID: "123",
+            });
+            const response4 = await conversation4.sendMessage("What is the number?");
+            console.log('ChatBot: ' + response4);
+
+            console.log(manager.getStats());
         }
         console.log('\n==============================================');
         console.log('Tests complete!');

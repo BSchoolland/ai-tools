@@ -26,14 +26,24 @@ npm install
 ```
 OPENAI_API_KEY=your_api_key_here
 ```
+and/or
+```
+ANTHROPIC_API_KEY=your_api_key_here
+```
+Note: you must have at least one API key set for the package to work, or you can pass the API key as an option to the constructor.
 
 ## Available Exports
 
 The package exports the following:
 
+For ES Modules:
 ```javascript
 // Main imports
 import { ChatBot, Tools, History } from '@bschoolland/ai-tools';
+```
+or for CommonJS:
+```javascript
+const { ChatBot, Tools, History } = require('@bschoolland/ai-tools');
 ```
 
 ## getLLMResponse
@@ -206,6 +216,81 @@ async function main() {
 main();
 ```
 
+## Working with History
+
+The History class manages conversation history for AI interactions. While it's used internally by ChatBot and doAgentTask, you can also use it directly for advanced use cases like:
+- Manually managing conversation context
+- Editing conversation history
+- Persisting conversations between sessions
+
+### Basic Usage
+
+```javascript
+import { History } from '@bschoolland/ai-tools';
+
+// Create a new history
+const history = new History(
+    [
+        {role: "system", content: "You are a helpful assistant."},
+        {role: "user", content: "Hello!"},
+        {role: "assistant", content: "Hello, how can I assist you today?"}
+    ]
+);
+
+// Add or change the system message
+history.setSystemMessage("You are a very helpful assistant.");
+
+// manually append messages
+history.addMessage({ role: "user", content: "Hello!" });
+history.addMessage({ role: "assistant", content: "Hi there!" });
+
+// Get the full history to use elsewhere in your application
+const allMessages = history.getHistory();
+
+// Get limited history (useful for context windows)
+const lastFewMessages = history.getHistory(5); // Get last 5 messages (preserves system message)
+```
+
+### Using with ChatBot
+
+```javascript
+import { ChatBot, History } from '@bschoolland/ai-tools';
+
+// Create a history with existing messages (for example, from a previous conversation or database)
+const history = new History([
+    {role: "system", content: "You are a helpful assistant."},
+    {role: "user", content: "Hello!"},
+    {role: "assistant", content: "Hello, how can I assist you today?"}
+]);
+
+// Create a ChatBot with existing history
+const chatbot = new ChatBot({
+    apiKey: process.env.OPENAI_API_KEY,
+    history: history
+});
+
+// Get the history at any time
+const currentHistory = chatbot.getHistory();
+
+// Replace the history
+chatbot.setHistory(new History([/* your messages */]));
+// Note that the above will use the existing system message from the ChatBot if you don't provide one in the History constructor
+```
+
+### History Message Format
+
+Messages in the history should follow this format:
+```javascript
+{
+    role: string,      // "system", "user", "assistant", or "tool"
+    content: string,   // The message content
+    tool_call_id?: string,  // Optional: ID for tool calls
+    name?: string      // Optional: Name of the tool used
+}
+```
+
+The History class automatically handles system messages (ensuring they stay at the start of the conversation) and provides methods to manage the conversation flow.
+
 ## Complete Example
 
 Here's a working example showing how to set up and use the package:
@@ -255,48 +340,63 @@ async function main() {
 main();
 ```
 
-To run this example:
-1. Save as `example.js`
-2. Ensure your `package.json` has `"type": "module"`
-3. Run with `node example.js`
+## Experimental: ChatBotManager
 
-## Using in CommonJS Projects
+The chatbot manager is a class that manages multiple conversations, identified by a conversationID. While still a work in progress, it is useful for multi user applications where each user needs to talk to their own instance of the AI.  
 
-If your project uses CommonJS (default Node.js modules), you have two options:
+### Usage
 
-1. Convert your project to use ES Modules (recommended):
-   ```json
-   {
-     "type": "module"
-   }
-   ```
+```javascript
+import { ChatBotManager } from '@bschoolland/ai-tools';
 
-2. Use dynamic imports in your CommonJS code:
-   ```javascript
-   // example.cjs
-   const main = async () => {
-     const { ChatBot } = await import('@bschoolland/ai-tools');
-     // ... rest of your code
-   };
-   main();
-   ```
+// define the manager along with some defaults to use whenever creating a new conversation
+const manager = new ChatBotManager(
+    {
+        model: "gpt-4o-mini",
+        tools: new Tools([/* your tools */]),
+        systemMessage: "You are a helpful assistant.",
+        saveCallback: async (conversationID, history) => { // conversationID is the unique identifier for the user, and history is the conversation history as an array of messages
+            // your code here to save the history to a database or other persistent storage
+        },
+        loadCallback: async (conversationID) => { // conversationID is the unique identifier for the user, and the callback should return the conversation history as an array of messages
+            // your code here to load the history from a database or other persistent storage
+            return [];
+        },
+        conversationTTL: 1000 * 60 * 60 * 24 * 30, // 30 days
+        checkInterval: 1000 * 60 * 60 * 24 // 1 day
+    }
+);
 
-## Troubleshooting
+// from here, you can create or access a conversation for a specific user
+const conversation = await manager.getConversation({ conversationID: "123" });
+
+// send a message from the user and receive a response, just like with the ChatBot class
+const response = await conversation.sendMessage("Hello, how are you?");
+
+// each conversation may optionally be initialized with a custom model, tools object, and system message, which it will use instead of the manager's defaults
+const conversation2 = await manager.getConversation({ conversationID: "345", model: "gpt-4o", tools: new Tools([/* your tools */]), systemMessage: "You are a helpful assistant." });
+
+
+```
+If the conversationID already exists, the conversation will be retrieved instead of creating a new one, and the manager keeps track of History for each conversation in memory for it's TTL
+
+The saveCallback is called whenever a message is sent, and the loadCallback is called whenever a conversation is initialized.
+
+Note that passing custom model, systemMessage, or tools as options to getConversation will not work for existing conversations, they will only be used if the conversation does not already exist.
+
+Again, this feature is still a work in progress and may need to be expanded or modified in the future.
+
+## General Troubleshooting
 
 Common issues and solutions:
 
-1. **"Cannot use import statement outside a module"**
-   - Add `"type": "module"` to your package.json
-   - Or rename your file to `.mjs`
-   - Or use dynamic imports (see CommonJS section above)
 
-2. **"ERR_PACKAGE_PATH_NOT_EXPORTED"**
+1. **"ERR_PACKAGE_PATH_NOT_EXPORTED"**
    - Check your import path matches the exports in package.json
    - Use the exact paths shown in "Available Exports" section
 
-3. **OpenAI API errors**
-   - Ensure OPENAI_API_KEY is set in your .env file
-   - Check that dotenv is properly configured
+2. **OpenAI, Anthropic, or other API errors**
+   - Ensure OPENAI_API_KEY, ANTHROPIC_API_KEY, or other API keys are set in your .env file are being passed as an option to the constructor
 
 ## Directory Structure
 

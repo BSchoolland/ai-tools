@@ -13,3 +13,4 @@ export * from './core/tools.js';
 
 // Utility classes
 export * from './utils/history.js';
+export * from './core/chatbotManager.js';
