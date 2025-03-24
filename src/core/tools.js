@@ -21,7 +21,23 @@ class Tools {
             functions = [...functions, ...testFunctions];
         }
         
-        this.functions = functions.map(t => typeof t === 'function' ? t : t.func);
+        this.functions = [];
+        
+        // Convert functions and set properties properly
+        for (const tool of functions) {
+            if (typeof tool === 'function') {
+                this.functions.push(tool);
+            } else {
+                const { func, acceptsCustomIdentifier } = tool;
+                
+                // Mark function as accepting customIdentifier if specified
+                if (acceptsCustomIdentifier) {
+                    func._acceptsCustomIdentifier = true;
+                }
+                
+                this.functions.push(func);
+            }
+        }
         
         // Auto-generate toolsJson
         this.toolsJson = functions.map(tool => {
@@ -152,45 +168,56 @@ class Tools {
                 // Extract parameters in the correct order from the args object
                 const paramNames = this._getParameterNames(func);
                 
-                // Get arguments from toolArgs
-                const extractedArgs = paramNames.map(name => {
-                    // For required parameters that aren't provided, use undefined
-                    // This allows the function to handle missing args with default values
-                    // or throw appropriate errors for required parameters
-                    return name in toolArgs ? toolArgs[name] : undefined;
-                });
-                
-                // If customIdentifier is provided and the function accepts it, pass it as additional argument
-                let result;
+                // If customIdentifier is provided and the function accepts it
                 if (customIdentifier !== null && func._acceptsCustomIdentifier) {
                     // Special case for functions that only have a customIdentifier parameter
                     if (paramNames.length === 1 && paramNames[0] === 'customIdentifier') {
-                        result = func.call(null, customIdentifier);
-                    } 
-                    // Check if toolArgs actually contains any of the expected parameters
-                    else {
-                        const hasRealArgs = paramNames.some(name => name in toolArgs);
+                        const result = func.call(null, customIdentifier);
+                        return result instanceof Promise ? await result : result;
+                    }
+                    
+                    // Check if the function already has a customIdentifier parameter
+                    const customIdentifierIndex = paramNames.indexOf('customIdentifier');
+                    
+                    // If the function already has a customIdentifier parameter in its signature
+                    if (customIdentifierIndex !== -1) {
+                        // Filter out the customIdentifier from paramNames
+                        const filteredParamNames = paramNames.filter(name => name !== 'customIdentifier');
                         
-                        if (hasRealArgs) {
-                            // Call with normal args, then customIdentifier as extra arg
-                            result = func.call(null, ...extractedArgs, customIdentifier);
+                        // Get arguments from toolArgs (excluding customIdentifier)
+                        const extractedArgs = filteredParamNames.map(name => {
+                            return name in toolArgs ? toolArgs[name] : undefined;
+                        });
+                        
+                        // Build the arguments array with the customIdentifier in the right position
+                        const args = [...extractedArgs];
+                        if (customIdentifierIndex < extractedArgs.length) {
+                            args.splice(customIdentifierIndex, 0, customIdentifier);
                         } else {
-                            // Pass customIdentifier as the first parameter (for timezone arg)
-                            const firstParamName = paramNames[0];
-                            // If first parameter is provided, use it, otherwise use null + customIdentifier
-                            const firstArg = firstParamName && toolArgs[firstParamName] ? toolArgs[firstParamName] : null;
-                            result = func.call(null, firstArg, customIdentifier);
+                            args.push(customIdentifier);
                         }
+                        
+                        const result = func.call(null, ...args);
+                        return result instanceof Promise ? await result : result;
+                    } else {
+                        // Get regular arguments
+                        const extractedArgs = paramNames.map(name => {
+                            return name in toolArgs ? toolArgs[name] : undefined;
+                        });
+                        
+                        // Add customIdentifier at the end
+                        const result = func.call(null, ...extractedArgs, customIdentifier);
+                        return result instanceof Promise ? await result : result;
                     }
                 } else {
-                    result = func.call(null, ...extractedArgs);
+                    // Standard call without customIdentifier
+                    const extractedArgs = paramNames.map(name => {
+                        return name in toolArgs ? toolArgs[name] : undefined;
+                    });
+                    const result = func.call(null, ...extractedArgs);
+                    return result instanceof Promise ? await result : result;
                 }
                 
-                // Handle async functions by checking if result is a Promise
-                if (result instanceof Promise) {
-                    return await result;
-                }
-                return result;
             } catch (error) {
                 console.error('Tool call failed:', error);
                 return 'Tool call failed: ' + error;

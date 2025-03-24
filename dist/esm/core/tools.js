@@ -10,7 +10,18 @@ class Tools {
     if (addTestTools) {
       functions = [...functions, ...testFunctions];
     }
-    this.functions = functions.map((t) => typeof t === "function" ? t : t.func);
+    this.functions = [];
+    for (const tool of functions) {
+      if (typeof tool === "function") {
+        this.functions.push(tool);
+      } else {
+        const { func, acceptsCustomIdentifier } = tool;
+        if (acceptsCustomIdentifier) {
+          func._acceptsCustomIdentifier = true;
+        }
+        this.functions.push(func);
+      }
+    }
     this.toolsJson = functions.map((tool) => {
       if (typeof tool === "function") {
         return this.generateToolJson(tool);
@@ -103,30 +114,39 @@ class Tools {
     if (func) {
       try {
         const paramNames = this._getParameterNames(func);
-        const extractedArgs = paramNames.map((name) => {
-          return name in toolArgs ? toolArgs[name] : void 0;
-        });
-        let result;
         if (customIdentifier !== null && func._acceptsCustomIdentifier) {
           if (paramNames.length === 1 && paramNames[0] === "customIdentifier") {
-            result = func.call(null, customIdentifier);
-          } else {
-            const hasRealArgs = paramNames.some((name) => name in toolArgs);
-            if (hasRealArgs) {
-              result = func.call(null, ...extractedArgs, customIdentifier);
+            const result = func.call(null, customIdentifier);
+            return result instanceof Promise ? await result : result;
+          }
+          const customIdentifierIndex = paramNames.indexOf("customIdentifier");
+          if (customIdentifierIndex !== -1) {
+            const filteredParamNames = paramNames.filter((name) => name !== "customIdentifier");
+            const extractedArgs = filteredParamNames.map((name) => {
+              return name in toolArgs ? toolArgs[name] : void 0;
+            });
+            const args = [...extractedArgs];
+            if (customIdentifierIndex < extractedArgs.length) {
+              args.splice(customIdentifierIndex, 0, customIdentifier);
             } else {
-              const firstParamName = paramNames[0];
-              const firstArg = firstParamName && toolArgs[firstParamName] ? toolArgs[firstParamName] : null;
-              result = func.call(null, firstArg, customIdentifier);
+              args.push(customIdentifier);
             }
+            const result = func.call(null, ...args);
+            return result instanceof Promise ? await result : result;
+          } else {
+            const extractedArgs = paramNames.map((name) => {
+              return name in toolArgs ? toolArgs[name] : void 0;
+            });
+            const result = func.call(null, ...extractedArgs, customIdentifier);
+            return result instanceof Promise ? await result : result;
           }
         } else {
-          result = func.call(null, ...extractedArgs);
+          const extractedArgs = paramNames.map((name) => {
+            return name in toolArgs ? toolArgs[name] : void 0;
+          });
+          const result = func.call(null, ...extractedArgs);
+          return result instanceof Promise ? await result : result;
         }
-        if (result instanceof Promise) {
-          return await result;
-        }
-        return result;
       } catch (error) {
         console.error("Tool call failed:", error);
         return "Tool call failed: " + error;
