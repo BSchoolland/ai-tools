@@ -95,13 +95,16 @@ class Tools {
   getTools() {
     return this.toolsJson;
   }
-  call(toolName, toolArgs) {
+  async call(toolName, toolArgs) {
     const func = this.functions.find((f) => f.name === toolName);
     if (func) {
       try {
         const paramNames = this._getParameterNames(func);
         const args = paramNames.map((name) => toolArgs[name]);
         const result = func(...args);
+        if (result instanceof Promise) {
+          return await result;
+        }
         return result;
       } catch (error) {
         console.error("Tool call failed:", error);

@@ -45,10 +45,10 @@ async function openAiToolLoop(options) {
     } else {
       history.addMessage({ role: "assistant", content: message2, tool_calls: tool_calls2 });
       callingTools = true;
-      tool_calls2.forEach((tool_call) => {
+      await Promise.all(tool_calls2.map(async (tool_call) => {
         try {
           const args = JSON.parse(tool_call.function.arguments);
-          const response = tools.call(tool_call.function.name, args);
+          const response = await tools.call(tool_call.function.name, args);
           history.addMessage({
             role: "tool",
             content: response.toString(),
@@ -63,7 +63,7 @@ async function openAiToolLoop(options) {
             name: tool_call.function.name
           });
         }
-      });
+      }));
     }
   }
   let message, tool_calls;

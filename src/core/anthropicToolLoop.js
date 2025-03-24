@@ -37,7 +37,7 @@ async function anthropicToolLoop(options) {
             for (const tool_call of tool_calls) {
                 try {
                     const args = JSON.parse(tool_call.function.arguments);
-                    const response = tools.call(tool_call.function.name, args);
+                    const response = await tools.call(tool_call.function.name, args);
                     
                     history.addMessage({ 
                         role: 'tool', 

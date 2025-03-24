@@ -39,10 +39,10 @@ async function deepSeekToolLoop(options) {
       console.warn("DeepSeek function calling is very unstable, and is limited to 1 tool call at a time.  Use another model for better results.");
       history.addMessage({ role: "assistant", content: message2, tool_calls: [tool_calls[0]] });
       callingTools = true;
-      [tool_calls[0]].forEach((tool_call) => {
+      await Promise.all([tool_calls[0]].map(async (tool_call) => {
         try {
           const args = JSON.parse(tool_call.function.arguments);
-          const response = tools.call(tool_call.function.name, args);
+          const response = await tools.call(tool_call.function.name, args);
           history.addMessage({
             role: "tool",
             content: response.toString(),
@@ -65,7 +65,7 @@ async function deepSeekToolLoop(options) {
             content: `<tool>Automated tool response for id: ${tool_call.id}: ${error.message}</tool>`
           });
         }
-      });
+      }));
     }
   }
   const { message } = await (0, import_apiCalls.deepSeekCall)(history.getHistory(maxHistory), [], model, apiKey);

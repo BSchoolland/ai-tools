@@ -38,10 +38,12 @@ async function openAiToolLoop(options) {
             // if there are tool calls, we need to call the tools, then loop again and allow the model to react to the results
             history.addMessage({ role: "assistant", content: message, tool_calls: tool_calls });
             callingTools = true;
-            tool_calls.forEach(tool_call => {
+            
+            // Use Promise.all to handle async tool calls
+            await Promise.all(tool_calls.map(async (tool_call) => {
                 try {
                     const args = JSON.parse(tool_call.function.arguments);
-                    const response = tools.call(tool_call.function.name, args);
+                    const response = await tools.call(tool_call.function.name, args);
                     history.addMessage({ 
                         role: 'tool', 
                         content: response.toString(),
@@ -56,7 +58,7 @@ async function openAiToolLoop(options) {
                         name: tool_call.function.name
                     });
                 }
-            });
+            }));
         }
     }
     // temporarily disable tool calls and have the model respond to the last tool call

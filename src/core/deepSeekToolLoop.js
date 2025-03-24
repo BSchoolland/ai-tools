@@ -37,10 +37,12 @@ async function deepSeekToolLoop(options) {
             // As a workaround for additional tool calls, we will only record the first tool call
             history.addMessage({ role: "assistant", content: message, tool_calls: [tool_calls[0]] });
             callingTools = true;
-            [tool_calls[0]].forEach(tool_call => {
+            
+            // Use Promise.all to handle async tool calls for the first tool call
+            await Promise.all([tool_calls[0]].map(async (tool_call) => {
                 try {
                     const args = JSON.parse(tool_call.function.arguments);
-                    const response = tools.call(tool_call.function.name, args);
+                    const response = await tools.call(tool_call.function.name, args);
                     history.addMessage({ 
                         role: 'tool', 
                         content: response.toString(),
@@ -67,7 +69,7 @@ async function deepSeekToolLoop(options) {
                         content: `<tool>Automated tool response for id: ${tool_call.id}: ${error.message}</tool>`
                     });
                 }
-            });
+            }));
         }
     }
     // temporarily disable tool calls and have the model respond to the last tool call
