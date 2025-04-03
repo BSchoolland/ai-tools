@@ -8,21 +8,12 @@ A personal collection of reusable AI utilities for quick project bootstrapping.
 
 ## Installation
 
-1. Add to your project's `package.json`:
-```json
-{
-  "dependencies": {
-    "@bschoolland/ai-tools": "git+https://github.com/bschoolland/ai-tools.git"
-  }
-}
+1. Run:
+``` sh
+npm install @benschoolland/ai-tools
 ```
 
-2. Run:
-```bash
-npm install
-```
-
-3. Create a `.env` file in your project root:
+2. Create a `.env` file in your project root:
 ```
 OPENAI_API_KEY=your_api_key_here
 ```
@@ -497,3 +488,32 @@ src/
 ## License
 
 MIT
+
+## Publishing to npm
+
+For future reference, here's how to publish updates to this package on npm:
+
+1. Update the version number in `package.json`:
+   ```json
+   {
+     "version": "x.y.z" // Follow semantic versioning
+   }
+   ```
+
+2. Make sure you're logged in to npm:
+   ```bash
+   npm whoami        # Check if you're logged in
+   npm login         # Log in if needed
+   ```
+
+3. Build the package to ensure everything works:
+   ```bash
+   npm run build
+   ```
+
+4. Publish the package:
+   ```bash
+   npm publish --access public
+   ```
+
+Remember that the package is published under the npm username `benschoolland`, so the scope in package.json must match that username.

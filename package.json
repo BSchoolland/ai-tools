@@ -1,5 +1,5 @@
 {
-  "name": "@bschoolland/ai-tools",
+  "name": "@benschoolland/ai-tools",
   "version": "0.1.0",
   "description": "A collection of reusable AI utilities for quick project bootstrapping",
   "type": "module",
